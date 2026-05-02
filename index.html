@@ -168,7 +168,7 @@
 
         // Importar Firebase SDK v10
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -249,9 +249,11 @@
         // ========== CARGAR EVENTOS DEL MES (orden ascendente por fecha) ==========
         async function loadEventsForMonth(month) {
             eventsContainer.innerHTML = '<div class="text-gray-500">Cargando eventos...</div>';
-            const q = query(collection(db, "eventos"), where("month", "==", month), orderBy("date", "asc"));
+            const q = query(collection(db, "eventos"), where("month", "==", month));
             const snapshot = await getDocs(q);
             const eventos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Ordenar por fecha en JavaScript (evita necesitar índice compuesto en Firestore)
+            eventos.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
             if (eventos.length === 0) {
                 eventsContainer.innerHTML = '<div class="text-gray-400 text-center py-4">No hay eventos en este mes. ¡Agrega el primero!</div>';
@@ -493,7 +495,7 @@
         document.getElementById('printBtn').onclick = async () => {
             const allEvents = [];
             for (const month of meses) {
-                const q = query(collection(db, "eventos"), where("month", "==", month), orderBy("date", "asc"));
+                const q = query(collection(db, "eventos"), where("month", "==", month));
                 const snap = await getDocs(q);
                 snap.forEach(doc => allEvents.push({ month, ...doc.data() }));
             }
@@ -501,6 +503,10 @@
             for (const ev of allEvents) {
                 if (!grouped[ev.month]) grouped[ev.month] = [];
                 grouped[ev.month].push(ev);
+            }
+            // Ordenar todos los eventos por fecha dentro de cada mes
+            for (const key in grouped) {
+                grouped[key].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
             }
             let printHtml = '<div style="max-width: 100%; padding: 1cm; font-family: sans-serif; background: white;"><h1 style="text-align: center; color: #1e40af;">Historial Escolar 2026 - ESC 2020</h1>';
             for (const month of meses) {
