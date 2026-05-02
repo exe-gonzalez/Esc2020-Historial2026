@@ -335,8 +335,23 @@
                             <input type="text" id="portadaTexto" placeholder="Ej. HISTORIAL 2026"
                                 class="w-full border p-2 rounded bg-white">
                         </div>
+                        <div class="flex gap-2 mt-2">
+                            <select id="portadaColor" class="w-1/2 border p-2 rounded bg-white">
+                                <option value="white">Blanco</option>
+                                <option value="black">Negro</option>
+                                <option value="#3b82f6">Azul</option>
+                            </select>
+                            <select id="portadaSize" class="w-1/2 border p-2 rounded bg-white">
+                                <option value="4vw">Pequeño</option>
+                                <option value="6vw" selected>Mediano</option>
+                                <option value="8vw">Grande</option>
+                            </select>
+                        </div>
+                        <button id="portadaSaveBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-4 transition"><i
+                                class="fa-solid fa-cloud-arrow-up"></i> Guardar Portada</button>
                         <button id="portadaPrintBtn"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-4 transition"><i
+                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-2 transition"><i
                                 class="fa-solid fa-print"></i> Imprimir a tamaño completo</button>
                     </div>
                 </div>
@@ -466,7 +481,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -927,7 +942,53 @@
         };
 
         // ========== PORTADA ==========
-        document.getElementById('portadaBtn').onclick = () => openModal('modalPortada');
+        document.getElementById('portadaBtn').onclick = async () => {
+            openModal('modalPortada');
+            try {
+                const docSnap = await getDoc(doc(db, "portadas", "portada_activa"));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('portadaPreviewBg').style.backgroundImage = data.imagenFondo || '';
+                    document.getElementById('portadaTexto').value = data.texto || '';
+
+                    const previewText = document.getElementById('portadaPreviewText');
+                    previewText.textContent = data.texto || '';
+
+                    if (data.color) {
+                        document.getElementById('portadaColor').value = data.color;
+                        previewText.style.color = data.color;
+                    }
+                    if (data.fontSize) {
+                        document.getElementById('portadaSize').value = data.fontSize;
+                        previewText.style.fontSize = data.fontSize;
+                    }
+                }
+            } catch (e) {
+                console.error("Error cargando portada:", e);
+            }
+        };
+
+        document.getElementById('portadaSaveBtn').onclick = async () => {
+            const btn = document.getElementById('portadaSaveBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+
+            const data = {
+                imagenFondo: document.getElementById('portadaPreviewBg').style.backgroundImage,
+                texto: document.getElementById('portadaTexto').value,
+                color: document.getElementById('portadaColor').value,
+                fontSize: document.getElementById('portadaSize').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                await setDoc(doc(db, "portadas", "portada_activa"), data);
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Guardada!';
+                setTimeout(() => btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar Portada', 2000);
+            } catch (e) {
+                console.error("Error al guardar portada:", e);
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+            }
+        };
 
         document.getElementById('portadaBgInput').addEventListener('change', async (e) => {
             if (e.target.files[0]) {
@@ -942,18 +1003,32 @@
         document.getElementById('portadaTexto').addEventListener('input', (e) => {
             document.getElementById('portadaPreviewText').textContent = e.target.value;
         });
+        document.getElementById('portadaColor').addEventListener('change', (e) => {
+            document.getElementById('portadaPreviewText').style.color = e.target.value;
+        });
+        document.getElementById('portadaSize').addEventListener('change', (e) => {
+            document.getElementById('portadaPreviewText').style.fontSize = e.target.value;
+        });
+
         document.getElementById('portadaPrintBtn').onclick = () => {
-            const bg = document.getElementById('portadaPreviewBg').style.backgroundImage;
-            const txt = document.getElementById('portadaTexto').value;
+            // Clonamos exactamente la vista previa del modal (mantiene fondo, texto, color y tamaño)
+            const previewClone = document.getElementById('portadaPreview').cloneNode(true);
+            
+            // Forzamos los estilos para que ocupe todo el A4 sin márgenes ni sombras
+            previewClone.style.width = '100%';
+            previewClone.style.height = '100vh';
+            previewClone.style.maxWidth = 'none';
+            previewClone.style.aspectRatio = 'auto';
+            previewClone.style.border = 'none';
+            previewClone.style.boxShadow = 'none';
+            previewClone.style.margin = '0';
+
+            // Lo inyectamos en el área de impresión y llamamos a print()
             document.body.classList.add('printing-fullpage');
             const pa = document.getElementById('printArea');
-            pa.innerHTML = `
-                <div class="print-bg-adjust" style="width: 100vw; height: 100vh; position: relative; background-size: cover; background-position: center; background-image: ${bg};">
-                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: white; text-shadow: 0px 4px 10px rgba(0,0,0,0.8); font-size: 6vw; padding: 1cm; word-break: break-word; text-transform: uppercase;">
-                        ${escapeHtml(txt)}
-                    </div>
-                </div>
-            `;
+            pa.innerHTML = ''; 
+            pa.appendChild(previewClone);
+
             pa.style.display = 'block';
             window.print();
             pa.style.display = 'none';
