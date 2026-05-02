@@ -513,6 +513,46 @@
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
         window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
 
+        window.imprimirEnNuevaVentana = (contenidoHTML, titulo = 'Impresión') => {
+            const ventana = window.open('', '_blank');
+            if (!ventana) {
+                alert('Por favor, permite las ventanas emergentes (pop-ups) para imprimir.');
+                return;
+            }
+            ventana.document.write(`
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${titulo}</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <style>
+                        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        @media print {
+                            @page { margin: 0; }
+                            body { margin: 0; }
+                            #printArea table { width: 100%; border-collapse: collapse; }
+                            #printArea td, #printArea th { border: 1px solid #000; padding: 10px; vertical-align: top; }
+                            #printArea td[style*="display: none"] { display: none !important; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="printArea">
+                        ${contenidoHTML}
+                    </div>
+                    <script>
+                        setTimeout(() => {
+                            window.print();
+                            window.close();
+                        }, 800);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            ventana.document.close();
+        };
+
         // ========== LOGIN ==========
         document.getElementById('loginBtn').onclick = () => {
             const pass = document.getElementById('passwordInput').value;
@@ -828,11 +868,7 @@
                 printHtml += `</div>`;
             }
             printHtml += `</div>`;
-            const pa = document.getElementById('printArea');
-            pa.innerHTML = printHtml;
-            pa.style.display = 'block';
-            window.print();
-            pa.style.display = 'none';
+            window.imprimirEnNuevaVentana(printHtml, `Eventos - ${mesName}`);
         };
 
         // ========== CARÁTULAS ==========
@@ -912,19 +948,14 @@
         };
 
         function doPrintA4(bgUrl, text, color, size) {
-            document.body.classList.add('printing-fullpage');
-            const pa = document.getElementById('printArea');
-            pa.innerHTML = `
+            const html = `
                 <div class="print-bg-adjust" style="width: 100vw; height: 100vh; position: relative; background-size: cover; background-position: center; background-image: ${bgUrl || 'none'};">
                     <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${size}; padding: 2cm; word-break: break-word; text-transform: uppercase;">
                         ${escapeHtml(text || '')}
                     </div>
                 </div>
             `;
-            pa.style.display = 'block';
-            window.print();
-            pa.style.display = 'none';
-            document.body.classList.remove('printing-fullpage');
+            window.imprimirEnNuevaVentana(html, 'Carátula');
         }
 
         document.getElementById('caratulaPrintCurrentBtn').onclick = () => {
@@ -1023,16 +1054,7 @@
             previewClone.style.boxShadow = 'none';
             previewClone.style.margin = '0';
 
-            // Lo inyectamos en el área de impresión y llamamos a print()
-            document.body.classList.add('printing-fullpage');
-            const pa = document.getElementById('printArea');
-            pa.innerHTML = ''; 
-            pa.appendChild(previewClone);
-
-            pa.style.display = 'block';
-            window.print();
-            pa.style.display = 'none';
-            document.body.classList.remove('printing-fullpage');
+            window.imprimirEnNuevaVentana(previewClone.outerHTML, 'Portada');
         };
 
         // ========== ORGANIZACIÓN ESCOLAR ==========
@@ -1198,9 +1220,7 @@
 
         document.getElementById('orgPrintBtn').onclick = () => {
             clearSelection();
-            document.body.classList.add('printing-table');
-            const pa = document.getElementById('printArea');
-            pa.innerHTML = `
+            const html = `
                 <div style="font-family: sans-serif; background: white; width: 100%;">
                     <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px; color: #0f766e;">ORGANIZACIÓN ESCOLAR</h1>
                     <style>
@@ -1211,10 +1231,7 @@
                     ${orgTC.innerHTML}
                 </div>
             `;
-            pa.style.display = 'block';
-            window.print();
-            pa.style.display = 'none';
-            document.body.classList.remove('printing-table');
+            window.imprimirEnNuevaVentana(html, 'Organización Escolar');
         };
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
