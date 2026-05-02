@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Historial Escolar 2026 - ESC 2020</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @page {
+            margin: 0;
+        }
+
         @media print {
             body * {
                 visibility: hidden;
@@ -25,6 +30,17 @@
                 margin: 0;
                 padding: 1cm;
                 background: white;
+            }
+
+            body.printing-fullpage #printArea {
+                padding: 0;
+                width: 100%;
+                height: 100vh;
+            }
+
+            body.printing-table #printArea {
+                padding: 1cm;
+                max-width: 100%;
             }
 
             .no-print,
@@ -56,6 +72,34 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Estilos para la tabla interactiva */
+        #orgTable {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        #orgTable td {
+            border: 1px solid #333;
+            padding: 8px;
+            min-width: 40px;
+            min-height: 30px;
+            vertical-align: top;
+            cursor: text;
+        }
+
+        #orgTable td.selected {
+            background-color: #e0f2fe !important;
+            outline: 2px solid #3b82f6;
+            z-index: 10;
+        }
+
+        /* Para forzar la impresión del fondo */
+        .print-bg-adjust {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
     </style>
 </head>
 
@@ -64,41 +108,57 @@
     <!-- PANTALLA DE LOGIN -->
     <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-blue-100">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
-            <h1 class="text-3xl font-bold text-blue-800 mb-2">HISTORIAL 2026</h1>
+            <h1 class="text-3xl font-bold text-blue-800 mb-2"><i class="fa-solid fa-graduation-cap"></i> HISTORIAL 2026
+            </h1>
             <h2 class="text-xl text-gray-600 mb-6">ESC 2020</h2>
             <input type="password" id="passwordInput" placeholder="Contraseña"
-                class="w-full border rounded-xl px-4 py-2 mb-4">
-            <button id="loginBtn" class="bg-blue-600 text-white px-6 py-2 rounded-full w-full">Ingresar</button>
+                class="w-full border rounded-xl px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-500">
+            <button id="loginBtn"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full w-full font-bold transition">Ingresar</button>
             <p id="loginError" class="text-red-500 text-sm mt-2 hidden">Contraseña incorrecta</p>
         </div>
     </div>
 
     <!-- APLICACIÓN PRINCIPAL -->
-    <div id="mainApp" class="hidden max-w-5xl mx-auto px-4 py-6">
+    <div id="mainApp" class="hidden max-w-6xl mx-auto px-4 py-6">
         <!-- Cabecera -->
-        <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
-            <h1 class="text-2xl font-bold text-blue-800">📅 Historial Mensual - ESC 2020</h1>
-            <div class="flex gap-2">
-                <button id="printBtn" class="bg-green-600 text-white px-4 py-2 rounded-full text-sm">🖨️ Imprimir
-                    PDF</button>
-                <button id="adminToggleBtn" class="bg-gray-500 text-white px-4 py-2 rounded-full text-sm">🔒
-                    Admin</button>
+        <div
+            class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white p-4 rounded-2xl shadow-sm">
+            <h1 class="text-2xl font-bold text-blue-800"><i class="fa-regular fa-calendar-days"></i> Historial Mensual
+            </h1>
+            <div class="flex gap-2 flex-wrap justify-center md:justify-end">
+                <button id="caratulasBtn"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-palette"></i> Carátulas</button>
+                <button id="portadaBtn"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-file-image"></i> Portada</button>
+                <button id="orgEscolarBtn"
+                    class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-school"></i> Organización</button>
+                <button id="printBtn"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-print"></i> Imprimir PDF</button>
+                <button id="adminToggleBtn"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-lock"></i> Admin</button>
             </div>
         </div>
 
         <!-- Menú de meses -->
-        <div id="monthMenu" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8"></div>
+        <div id="monthMenu" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8"></div>
 
         <!-- Vista de mes seleccionado -->
         <div id="monthView" class="hidden bg-white rounded-2xl shadow-lg p-6">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="currentMonthTitle" class="text-2xl font-bold text-blue-700"></h2>
-                <button id="backToMenuBtn" class="text-gray-500 hover:text-gray-700">← Volver a meses</button>
+                <h2 id="currentMonthTitle" class="text-2xl font-bold text-blue-700 uppercase"></h2>
+                <button id="backToMenuBtn" class="text-gray-500 hover:text-gray-800 font-semibold"><i
+                        class="fa-solid fa-arrow-left"></i> Volver</button>
             </div>
 
             <!-- Formulario para agregar evento -->
             <form id="eventForm" class="border-b pb-6 mb-6">
-                <h3 class="text-lg font-semibold mb-3">Agregar evento</h3>
+                <h3 class="text-lg font-semibold mb-3"><i class="fa-solid fa-plus-circle"></i> Agregar evento</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label class="block text-sm font-medium">Título *</label><input type="text" id="title" required
                             class="w-full border rounded-lg px-3 py-2"></div>
@@ -121,44 +181,251 @@
 
                 <!-- Gestión de imágenes -->
                 <div class="mt-4">
-                    <label class="block text-sm font-medium mb-1">📸 Fotos (máx 5, se comprimen automáticamente)</label>
+                    <label class="block text-sm font-medium mb-1"><i class="fa-solid fa-camera"></i> Fotos (máx
+                        5)</label>
                     <input type="file" id="imageInput" accept="image/*" multiple class="mb-2">
                     <div id="imagePreviewContainer" class="flex flex-wrap gap-2 mt-2"></div>
-                    <p class="text-xs text-gray-500">Las imágenes se comprimirán a 800px y 40% calidad. Tardará unos
-                        segundos si son grandes.</p>
                 </div>
 
                 <div class="flex gap-3 mt-4">
-                    <button type="submit" id="saveBtn" class="bg-blue-600 text-white px-5 py-2 rounded-full">Guardar
+                    <button type="submit" id="saveBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-semibold transition">Guardar
                         Evento</button>
-                    <button type="button" id="anotherEventBtn" class="bg-gray-200 px-5 py-2 rounded-full">Agregar otro
-                        evento del mismo mes</button>
+                    <button type="button" id="anotherEventBtn"
+                        class="bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-full font-semibold transition">Limpiar /
+                        Nuevo</button>
                 </div>
-                <div id="saveMessage" class="mt-2 text-sm hidden"></div>
+                <div id="saveMessage" class="mt-2 text-sm font-medium hidden"></div>
             </form>
 
             <!-- Lista de eventos del mes -->
             <div id="eventsList">
-                <h3 class="text-lg font-semibold mb-3">Eventos de este mes</h3>
+                <h3 class="text-lg font-semibold mb-3"><i class="fa-solid fa-list"></i> Eventos de este mes</h3>
                 <div id="eventsContainer" class="space-y-4"></div>
             </div>
         </div>
     </div>
 
-    <!-- Área oculta para impresión -->
+    <!-- MODAL: CARÁTULAS -->
+    <div id="modalCaratulas"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start overflow-y-auto pt-10 pb-10"
+        onclick="if(event.target===this) closeModal('modalCaratulas')">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-[95%] max-w-6xl relative">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-black text-3xl font-bold"
+                onclick="closeModal('modalCaratulas')">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-purple-700"><i class="fa-solid fa-palette"></i> Carátulas</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Crear Nueva -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 border-b pb-2">Crear Nueva</h3>
+                    <div class="space-y-3 mb-4">
+                        <input type="text" id="caratulaNombre" placeholder="Texto (ej. FEBRERO)"
+                            class="w-full border p-2 rounded focus:ring-2 focus:ring-purple-500">
+                        <div class="flex gap-2">
+                            <select id="caratulaColor" class="border p-2 rounded w-1/2">
+                                <option value="black">Texto Negro</option>
+                                <option value="white">Texto Blanco</option>
+                                <option value="#3b82f6">Texto Azul</option>
+                            </select>
+                            <select id="caratulaSize" class="border p-2 rounded w-1/2">
+                                <option value="2rem">Pequeño</option>
+                                <option value="4rem" selected>Mediano</option>
+                                <option value="6rem">Grande</option>
+                                <option value="8rem">Extra Grande</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1"><i class="fa-solid fa-image"></i> Imagen de
+                                Fondo (Opcional)</label>
+                            <input type="file" id="caratulaBgInput" accept="image/*" class="w-full border p-1 rounded">
+                            <button id="caratulaClearBgBtn" class="text-xs text-red-500 mt-1"><i
+                                    class="fa-solid fa-trash"></i> Quitar fondo</button>
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button id="caratulaSaveBtn"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1 font-bold"><i
+                                    class="fa-solid fa-cloud-arrow-up"></i> Guardar en Nube</button>
+                            <button id="caratulaPrintCurrentBtn"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1 font-bold"><i
+                                    class="fa-solid fa-print"></i> Imprimir</button>
+                        </div>
+                    </div>
+
+                    <!-- Preview A4 -->
+                    <div class="border-2 border-dashed border-gray-300 mx-auto bg-gray-50 relative overflow-hidden shadow-inner print-bg-adjust"
+                        style="width: 100%; max-width: 350px; aspect-ratio: 1 / 1.414;" id="caratulaPreview">
+                        <div id="caratulaPreviewBg" class="absolute inset-0 bg-cover bg-center"></div>
+                        <div id="caratulaPreviewText"
+                            class="absolute inset-0 flex items-center justify-center font-bold text-center drop-shadow-md break-words p-4 uppercase"
+                            style="font-size: 4rem; color: black; font-family: sans-serif;"></div>
+                    </div>
+                </div>
+
+                <!-- Guardadas -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 border-b pb-2">Guardadas en Nube</h3>
+                    <div id="caratulasList"
+                        class="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto p-2">
+                        <!-- Items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PORTADA -->
+    <div id="modalPortada"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start overflow-y-auto pt-10 pb-10"
+        onclick="if(event.target===this) closeModal('modalPortada')">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-[95%] max-w-4xl relative">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-black text-3xl font-bold"
+                onclick="closeModal('modalPortada')">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-indigo-700"><i class="fa-solid fa-file-image"></i> Portada (A4
+                Completo)</h2>
+
+            <div class="space-y-4 mb-6 bg-indigo-50 p-4 rounded-xl">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <label class="block text-sm font-semibold mb-2"><i class="fa-solid fa-upload"></i> Subir
+                            Imagen</label>
+                        <input type="file" id="portadaBgInput" accept="image/*"
+                            class="w-full border p-2 rounded bg-white mb-3">
+                        <label class="block text-sm font-semibold mb-2"><i class="fa-solid fa-link"></i> O pegar URL
+                            (Canvas/IA)</label>
+                        <input type="text" id="portadaBgUrl" placeholder="https://..."
+                            class="w-full border p-2 rounded bg-white">
+                    </div>
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2"><i class="fa-solid fa-font"></i> Texto
+                                Superpuesto (Opcional)</label>
+                            <input type="text" id="portadaTexto" placeholder="Ej. HISTORIAL 2026"
+                                class="w-full border p-2 rounded bg-white">
+                        </div>
+                        <button id="portadaPrintBtn"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-4 transition"><i
+                                class="fa-solid fa-print"></i> Imprimir a tamaño completo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Portada A4 -->
+            <p class="text-center text-sm text-gray-500 mb-2">Vista previa (La impresión será sin márgenes)</p>
+            <div class="border border-gray-300 mx-auto bg-gray-100 relative shadow-lg print-bg-adjust"
+                style="width: 100%; max-width: 500px; aspect-ratio: 1 / 1.414;" id="portadaPreview">
+                <div id="portadaPreviewBg" class="absolute inset-0 bg-cover bg-center"></div>
+                <div id="portadaPreviewText"
+                    class="absolute inset-0 flex items-center justify-center font-bold text-center text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] p-8 uppercase"
+                    style="font-size: 3rem; font-family: sans-serif;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ORGANIZACIÓN ESCOLAR -->
+    <div id="modalOrgEscolar"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start overflow-y-auto pt-10 pb-10"
+        onclick="if(event.target===this) closeModal('modalOrgEscolar')">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-[95%] max-w-7xl relative min-h-[80vh]">
+            <button class="absolute top-4 right-4 text-gray-500 hover:text-black text-3xl font-bold"
+                onclick="closeModal('modalOrgEscolar')">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-teal-700"><i class="fa-solid fa-school"></i> Organización Escolar
+            </h2>
+
+            <!-- Toolbar Superior -->
+            <div class="bg-gray-100 p-3 rounded-xl flex flex-wrap gap-4 items-end mb-4 border">
+                <div class="flex gap-2 bg-white p-2 rounded shadow-sm border">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600">Columnas</label>
+                        <input type="number" id="orgCols" min="1" max="15" value="3"
+                            class="w-16 border p-1 rounded text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600">Filas</label>
+                        <input type="number" id="orgRows" min="1" max="30" value="4"
+                            class="w-16 border p-1 rounded text-center">
+                    </div>
+                    <button id="orgGenerateBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold mt-4"><i
+                            class="fa-solid fa-table"></i> Crear</button>
+                </div>
+
+                <div class="flex gap-1 bg-white p-2 rounded shadow-sm border mt-auto">
+                    <button class="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-200 font-bold"
+                        onclick="document.execCommand('bold', false, null)" title="Negrita">N</button>
+                    <button class="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-200 underline"
+                        onclick="document.execCommand('underline', false, null)" title="Subrayado">S</button>
+                    <button class="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-200 italic"
+                        onclick="document.execCommand('italic', false, null)" title="Cursiva">I</button>
+                    <button class="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-200"
+                        onclick="document.execCommand('insertUnorderedList', false, null)" title="Viñetas"><i
+                            class="fa-solid fa-list-ul"></i></button>
+                    <button class="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-200"
+                        onclick="document.execCommand('justifyCenter', false, null)" title="Centrar"><i
+                            class="fa-solid fa-align-center"></i></button>
+                </div>
+
+                <div class="flex gap-2 bg-white p-2 rounded shadow-sm border mt-auto">
+                    <button id="orgMergeBtn"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm font-semibold"><i
+                            class="fa-solid fa-object-group"></i> Combinar Selección</button>
+                    <button id="orgSplitBtn"
+                        class="bg-yellow-700 hover:bg-yellow-800 text-white px-3 py-1 rounded text-sm font-semibold"><i
+                            class="fa-solid fa-object-ungroup"></i> Dividir</button>
+                    <button id="orgMergeRowBtn"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold"><i
+                            class="fa-solid fa-arrows-left-right"></i> Combinar Fila</button>
+                </div>
+
+                <div class="flex-1 flex justify-end mt-auto">
+                    <button id="orgPrintBtn"
+                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow"><i
+                            class="fa-solid fa-print"></i> Imprimir Tabla</button>
+                </div>
+            </div>
+
+            <!-- Guardar / Cargar -->
+            <div
+                class="flex flex-col md:flex-row gap-4 mb-4 bg-teal-50 p-3 rounded-xl items-center border border-teal-100">
+                <div class="flex-1 flex gap-2 w-full">
+                    <input type="text" id="orgSaveName" placeholder="Nombre para guardar (ej. Horarios)"
+                        class="flex-1 border p-2 rounded shadow-sm focus:ring-2 focus:ring-teal-500">
+                    <button id="orgSaveBtn"
+                        class="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded font-semibold shadow-sm"><i
+                            class="fa-solid fa-cloud-arrow-up"></i> Guardar</button>
+                </div>
+                <div class="flex-1 flex gap-2 w-full">
+                    <select id="orgLoadSelect" class="flex-1 border p-2 rounded shadow-sm">
+                        <option value="">-- Cargar tabla guardada --</option>
+                    </select>
+                    <button id="orgLoadBtn"
+                        class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-semibold shadow-sm"><i
+                            class="fa-solid fa-cloud-arrow-down"></i> Cargar</button>
+                    <button id="orgDeleteBtn"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold admin-only hidden shadow-sm"><i
+                            class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+
+            <!-- Área de la Tabla -->
+            <p class="text-sm text-gray-600 mb-2 font-medium"><i class="fa-solid fa-circle-info"></i> Haz clic y
+                arrastra para seleccionar celdas, luego usa "Combinar Selección". Haz clic en cualquier celda para
+                escribir.</p>
+            <div class="overflow-x-auto border border-gray-400 p-6 min-h-[400px] bg-white relative shadow-inner"
+                id="orgTableContainer">
+                <!-- La tabla se genera aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Área oculta para impresión general -->
     <div id="printArea" style="display: none;"></div>
 
     <!-- FIREBASE SDK Y CÓDIGO PRINCIPAL -->
     <script type="module">
         // ========== CONFIGURACIÓN DE FIREBASE ==========
-        // ⚠️ ATENCIÓN: GitHub detectó tu clave API porque estaba pública en el código.
-        // Para solucionar la alerta permanentemente:
-        // 1. Ve a la consola de Firebase / Google Cloud, revoca la clave anterior y genera una nueva.
-        // 2. Restringe la nueva clave en Google Cloud Console para que solo funcione en tu dominio web.
-        // 3. Pega tu nueva clave aquí. Si GitHub la vuelve a detectar, es normal en apps de una sola página (SPA).
-        // Una forma de evitar que el bot de GitHub te avise es dividir el string así: "AIzaSy" + "tu_resto_de_clave"
         const firebaseConfig = {
-            apiKey: "AIzaSy" + "D0oIKA1Mun0jq_IHyG__R8OOjqSe1zmNE", // Reemplaza esto con tu nueva API key
+            apiKey: "AIzaSy" + "D0oIKA1Mun0jq_IHyG__R8OOjqSe1zmNE",
             authDomain: "historial2026esc2020.firebaseapp.com",
             projectId: "historial2026esc2020",
             storageBucket: "historial2026esc2020.firebasestorage.app",
@@ -166,7 +433,6 @@
             appId: "1:675158519877:web:f0e3fd480587be3bef332c"
         };
 
-        // Importar Firebase SDK v10
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -174,8 +440,8 @@
         const db = getFirestore(app);
 
         // ========== CONTRASEÑAS ==========
-        const USER_PASS = "escuela@2026";      // Contraseña general para entrar a la app
-        const ADMIN_PASS = "admin@2020";       // Contraseña para modo administrador (editar/eliminar)
+        const USER_PASS = "escuela@2026";
+        const ADMIN_PASS = "admin@2020";
 
         // Variables globales
         let isAdmin = false;
@@ -191,22 +457,14 @@
         const currentMonthTitle = document.getElementById('currentMonthTitle');
         const backToMenuBtn = document.getElementById('backToMenuBtn');
         const eventForm = document.getElementById('eventForm');
-        const titleInput = document.getElementById('title');
-        const dateInput = document.getElementById('date');
-        const turnoSelect = document.getElementById('turno');
-        const otroTurnoDiv = document.getElementById('otroTurnoDiv');
-        const otroTurnoText = document.getElementById('otroTurnoText');
-        const descriptionInput = document.getElementById('description');
-        const imageInput = document.getElementById('imageInput');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const saveBtn = document.getElementById('saveBtn');
-        const anotherEventBtn = document.getElementById('anotherEventBtn');
-        const saveMessage = document.getElementById('saveMessage');
-        const eventsContainer = document.getElementById('eventsContainer');
 
-        // Lista de meses (en minúscula y capitalizados)
-        const meses = ['marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        const mesesCapital = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        // Meses actualizados (incluye Febrero)
+        const meses = ['febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const mesesCapital = ['Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        // Utilidades globales
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
 
         // ========== LOGIN ==========
         document.getElementById('loginBtn').onclick = () => {
@@ -225,63 +483,64 @@
             monthMenu.innerHTML = '';
             mesesCapital.forEach((mes, idx) => {
                 const btn = document.createElement('button');
-                btn.textContent = mes;
-                btn.className = 'bg-white hover:bg-blue-100 text-blue-800 font-semibold py-3 rounded-xl shadow transition border border-blue-200';
+                btn.innerHTML = `<i class="fa-regular fa-calendar mr-1"></i> ${mes}`;
+                btn.className = 'bg-white hover:bg-blue-100 text-blue-800 font-semibold py-3 px-2 rounded-xl shadow transition border border-blue-200 text-sm md:text-base';
                 btn.onclick = () => openMonth(meses[idx], mes);
                 monthMenu.appendChild(btn);
             });
         }
 
-        // ========== ABRIR UN MES ==========
+        // ========== EVENTOS: ABRIR UN MES ==========
         async function openMonth(monthKey, monthName) {
             currentMonth = monthKey;
             currentEditingId = null;
             currentImagesBase64 = [];
-            imagePreviewContainer.innerHTML = '';
+            document.getElementById('imagePreviewContainer').innerHTML = '';
             eventForm.reset();
-            otroTurnoDiv.classList.add('hidden');
-            saveMessage.classList.add('hidden');
+            document.getElementById('otroTurnoDiv').classList.add('hidden');
+            document.getElementById('saveMessage').classList.add('hidden');
             currentMonthTitle.textContent = monthName;
             monthView.classList.remove('hidden');
             await loadEventsForMonth(monthKey);
         }
 
-        // ========== CARGAR EVENTOS DEL MES (orden ascendente por fecha) ==========
         async function loadEventsForMonth(month) {
-            eventsContainer.innerHTML = '<div class="text-gray-500">Cargando eventos...</div>';
+            const eventsContainer = document.getElementById('eventsContainer');
+            eventsContainer.innerHTML = '<div class="text-gray-500"><i class="fa-solid fa-spinner fa-spin"></i> Cargando eventos...</div>';
             const q = query(collection(db, "eventos"), where("month", "==", month));
             const snapshot = await getDocs(q);
             const eventos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Ordenar por fecha en JavaScript (evita necesitar índice compuesto en Firestore)
             eventos.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
             if (eventos.length === 0) {
-                eventsContainer.innerHTML = '<div class="text-gray-400 text-center py-4">No hay eventos en este mes. ¡Agrega el primero!</div>';
+                eventsContainer.innerHTML = '<div class="text-gray-400 text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">No hay eventos en este mes. ¡Agrega el primero!</div>';
                 return;
             }
 
             let html = '';
             for (const ev of eventos) {
                 const fechaObj = new Date(ev.date);
+                // Ajuste de zona horaria simple
+                fechaObj.setMinutes(fechaObj.getMinutes() + fechaObj.getTimezoneOffset());
                 const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
                 const turnoMostrar = ev.turno || '';
                 const imagenesHtml = ev.images && ev.images.length ?
-                    `<div class="grid grid-cols-3 gap-2 mt-2">${ev.images.map(img => `<img src="${img}" class="w-full h-24 object-cover rounded cursor-pointer" onclick="window.open(this.src)">`).join('')}</div>` :
-                    '<div class="text-gray-400 text-sm">Sin imágenes</div>';
+                    `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 justify-content-center" style="justify-content: center; margin: auto;">${ev.images.map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-80 transition border" style="margin: auto;" onclick="window.open(this.src)">`).join('')}</div>` :
+                    '';
 
                 html += `
-                <div class="border rounded-lg p-4 bg-gray-50" data-id="${ev.id}">
+                <div class="border rounded-xl p-5 bg-white shadow-sm hover:shadow-md transition" data-id="${ev.id}">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h4 class="font-bold text-lg">${escapeHtml(ev.title)}</h4>
-                            <p class="text-sm text-gray-600">📅 ${fechaFormateada} | ${turnoMostrar}</p>
+                            <h4 class="font-bold text-xl text-gray-800">${escapeHtml(ev.title)}</h4>
+                            <p class="text-sm text-blue-600 font-semibold mt-1"><i class="fa-regular fa-clock"></i> ${fechaFormateada} | ${turnoMostrar}</p>
                         </div>
                         ${isAdmin ? `<div class="flex gap-2">
-                            <button class="edit-event text-blue-600" data-id="${ev.id}">✏️</button>
-                            <button class="delete-event text-red-600" data-id="${ev.id}">🗑️</button>
+                            <button class="edit-event bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 transition" data-id="${ev.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button class="delete-event bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 transition" data-id="${ev.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                         </div>` : ''}
                     </div>
-                    <p class="text-gray-700 mt-1">${escapeHtml(ev.description || '')}</p>
+                    <p class="text-gray-700 mt-3 whitespace-pre-wrap">${escapeHtml(ev.description || '')}</p>
                     ${imagenesHtml}
                 </div>
             `;
@@ -289,13 +548,13 @@
             eventsContainer.innerHTML = html;
 
             if (isAdmin) {
-                document.querySelectorAll('.edit-event').forEach(btn => btn.addEventListener('click', (e) => editEvent(btn.dataset.id)));
-                document.querySelectorAll('.delete-event').forEach(btn => btn.addEventListener('click', (e) => deleteEvent(btn.dataset.id)));
+                document.querySelectorAll('.edit-event').forEach(btn => btn.addEventListener('click', () => editEvent(btn.dataset.id)));
+                document.querySelectorAll('.delete-event').forEach(btn => btn.addEventListener('click', () => deleteEvent(btn.dataset.id)));
             }
         }
 
-        // ========== COMPRESIÓN DE IMÁGENES (más rápida y eficiente) ==========
-        async function compressImage(file, maxWidth = 800, quality = 0.4) {
+        // Compresión rápida
+        async function compressImage(file, maxWidth = 1000, quality = 0.6) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -326,128 +585,111 @@
             });
         }
 
-        // Procesar imágenes seleccionadas
-        imageInput.addEventListener('change', async (e) => {
+        // Subida de imágenes evento
+        document.getElementById('imageInput').addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (currentImagesBase64.length + files.length > 5) {
                 alert('Máximo 5 imágenes por evento');
-                imageInput.value = '';
+                e.target.value = '';
                 return;
             }
-            saveMessage.textContent = 'Comprimiendo imágenes...';
-            saveMessage.classList.remove('hidden');
+            const sm = document.getElementById('saveMessage');
+            sm.textContent = 'Comprimiendo imágenes...';
+            sm.classList.remove('hidden');
             for (const file of files) {
                 try {
-                    const compressed = await compressImage(file);
+                    const compressed = await compressImage(file, 800, 0.5);
                     currentImagesBase64.push(compressed);
-                } catch (err) {
-                    console.error('Error comprimiendo:', err);
-                }
+                } catch (err) { console.error(err); }
             }
             renderImagePreviews();
-            saveMessage.classList.add('hidden');
-            imageInput.value = '';
+            sm.classList.add('hidden');
+            e.target.value = '';
         });
 
         function renderImagePreviews() {
-            imagePreviewContainer.innerHTML = '';
+            const c = document.getElementById('imagePreviewContainer');
+            c.innerHTML = '';
             currentImagesBase64.forEach((img, idx) => {
                 const div = document.createElement('div');
-                div.className = 'relative w-20 h-20';
-                div.innerHTML = `
-                <img src="${img}" class="w-full h-full object-cover rounded border">
-                <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs" data-index="${idx}">X</button>
-            `;
+                div.className = 'relative w-24 h-24';
+                div.innerHTML = `<img src="${img}" class="w-full h-full object-cover rounded-lg border shadow-sm"><button type="button" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 text-xs font-bold" data-index="${idx}">&times;</button>`;
                 div.querySelector('button').onclick = () => {
                     currentImagesBase64.splice(idx, 1);
                     renderImagePreviews();
                 };
-                imagePreviewContainer.appendChild(div);
+                c.appendChild(div);
             });
         }
 
-        // ========== GUARDAR EVENTO (crear o editar) ==========
+        // Guardar evento
         eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const title = titleInput.value.trim();
-            const date = dateInput.value;
-            if (!title || !date) {
-                alert('Título y fecha son obligatorios');
-                return;
-            }
-            let turno = turnoSelect.value;
-            if (turno === 'Otro') turno = otroTurnoText.value.trim() || 'Otro';
+            const title = document.getElementById('title').value.trim();
+            const date = document.getElementById('date').value;
+            let turno = document.getElementById('turno').value;
+            if (turno === 'Otro') turno = document.getElementById('otroTurnoText').value.trim() || 'Otro';
 
             const eventData = {
-                month: currentMonth,
-                title,
-                date,
-                turno,
-                description: descriptionInput.value,
+                month: currentMonth, title, date, turno,
+                description: document.getElementById('description').value,
                 images: currentImagesBase64,
                 updatedAt: new Date().toISOString()
             };
 
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="loader"></span> Guardando...';
-            saveMessage.textContent = 'Guardando evento...';
-            saveMessage.classList.remove('hidden');
+            const btn = document.getElementById('saveBtn');
+            const sm = document.getElementById('saveMessage');
+            btn.disabled = true; btn.innerHTML = '<span class="loader"></span>';
+            sm.textContent = 'Guardando...'; sm.classList.remove('hidden');
 
             try {
                 if (currentEditingId) {
-                    const ref = doc(db, "eventos", currentEditingId);
-                    await updateDoc(ref, eventData);
+                    await updateDoc(doc(db, "eventos", currentEditingId), eventData);
                 } else {
                     await addDoc(collection(db, "eventos"), { ...eventData, createdAt: new Date().toISOString() });
                 }
-                saveMessage.textContent = '✅ ¡Evento guardado con éxito!';
-                setTimeout(() => saveMessage.classList.add('hidden'), 3000);
+                sm.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-check"></i> ¡Evento guardado!</span>';
+                setTimeout(() => sm.classList.add('hidden'), 3000);
                 resetFormAfterSave();
                 await loadEventsForMonth(currentMonth);
             } catch (error) {
-                console.error('Error al guardar:', error);
-                saveMessage.textContent = '❌ Error al guardar. Revisa consola (F12).';
-                saveMessage.classList.remove('hidden');
+                console.error(error);
+                sm.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-xmark"></i> Error al guardar</span>';
             } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = 'Guardar Evento';
+                btn.disabled = false; btn.innerHTML = 'Guardar Evento';
             }
         });
 
         function resetFormAfterSave() {
-            titleInput.value = '';
-            dateInput.value = '';
-            turnoSelect.value = 'Turno Mañana';
-            otroTurnoDiv.classList.add('hidden');
-            otroTurnoText.value = '';
-            descriptionInput.value = '';
+            document.getElementById('title').value = '';
+            document.getElementById('date').value = '';
+            document.getElementById('turno').value = 'Turno Mañana';
+            document.getElementById('otroTurnoDiv').classList.add('hidden');
+            document.getElementById('otroTurnoText').value = '';
+            document.getElementById('description').value = '';
             currentImagesBase64 = [];
             renderImagePreviews();
             currentEditingId = null;
         }
 
-        anotherEventBtn.onclick = () => {
+        document.getElementById('anotherEventBtn').onclick = () => {
             resetFormAfterSave();
-            saveMessage.textContent = 'Formulario limpio. Puedes agregar otro evento.';
-            saveMessage.classList.remove('hidden');
-            setTimeout(() => saveMessage.classList.add('hidden'), 2000);
         };
 
-        // ========== EDITAR EVENTO ==========
         async function editEvent(id) {
-            const docRef = doc(db, "eventos", id);
-            const snapshot = await getDocs(query(collection(db, "eventos"), where("__name__", "==", id)));
-            if (!snapshot.empty) {
-                const ev = snapshot.docs[0].data();
+            const snap = await getDocs(query(collection(db, "eventos"), where("__name__", "==", id)));
+            if (!snap.empty) {
+                const ev = snap.docs[0].data();
                 currentEditingId = id;
-                titleInput.value = ev.title;
-                dateInput.value = ev.date;
-                turnoSelect.value = ev.turno.includes('Mañana') ? 'Turno Mañana' : ev.turno.includes('Tarde') ? 'Turno Tarde' : ev.turno === 'Apoyo' ? 'Apoyo' : 'Otro';
-                if (turnoSelect.value === 'Otro') {
-                    otroTurnoDiv.classList.remove('hidden');
-                    otroTurnoText.value = ev.turno === 'Otro' ? '' : ev.turno;
+                document.getElementById('title').value = ev.title;
+                document.getElementById('date').value = ev.date;
+                const ts = document.getElementById('turno');
+                ts.value = ev.turno.includes('Mañana') ? 'Turno Mañana' : ev.turno.includes('Tarde') ? 'Turno Tarde' : ev.turno === 'Apoyo' ? 'Apoyo' : 'Otro';
+                if (ts.value === 'Otro') {
+                    document.getElementById('otroTurnoDiv').classList.remove('hidden');
+                    document.getElementById('otroTurnoText').value = ev.turno === 'Otro' ? '' : ev.turno;
                 }
-                descriptionInput.value = ev.description || '';
+                document.getElementById('description').value = ev.description || '';
                 currentImagesBase64 = [...(ev.images || [])];
                 renderImagePreviews();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -461,8 +703,8 @@
             }
         }
 
-        turnoSelect.addEventListener('change', () => {
-            otroTurnoDiv.classList.toggle('hidden', turnoSelect.value !== 'Otro');
+        document.getElementById('turno').addEventListener('change', (e) => {
+            document.getElementById('otroTurnoDiv').classList.toggle('hidden', e.target.value !== 'Otro');
         });
 
         backToMenuBtn.onclick = () => {
@@ -471,73 +713,406 @@
             resetFormAfterSave();
         };
 
-        // ========== MODO ADMIN ==========
+        // ========== ADMIN ==========
+        function updateAdminUI() {
+            document.querySelectorAll('.admin-only').forEach(el => isAdmin ? el.classList.remove('hidden') : el.classList.add('hidden'));
+            const btn = document.getElementById('adminToggleBtn');
+            if (isAdmin) {
+                btn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Admin Activo';
+                btn.classList.replace('bg-gray-500', 'bg-red-600');
+                btn.classList.replace('hover:bg-gray-600', 'hover:bg-red-700');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> Admin';
+                btn.classList.replace('bg-red-600', 'bg-gray-500');
+                btn.classList.replace('hover:bg-red-700', 'hover:bg-gray-600');
+            }
+            // Refrescar vistas si están abiertas
+            if (currentMonth) loadEventsForMonth(currentMonth);
+            if (!document.getElementById('modalCaratulas').classList.contains('hidden')) loadCaratulas();
+            if (!document.getElementById('modalOrgEscolar').classList.contains('hidden')) loadOrgTablesList();
+        }
+
         document.getElementById('adminToggleBtn').onclick = () => {
             if (isAdmin) {
                 isAdmin = false;
-                document.getElementById('adminToggleBtn').innerHTML = '🔒 Admin';
-                document.getElementById('adminToggleBtn').classList.remove('bg-red-600');
-                document.getElementById('adminToggleBtn').classList.add('bg-gray-500');
-                if (currentMonth) loadEventsForMonth(currentMonth);
+                updateAdminUI();
             } else {
                 const pass = prompt('Contraseña de administrador:');
                 if (pass === ADMIN_PASS) {
                     isAdmin = true;
-                    document.getElementById('adminToggleBtn').innerHTML = '👑 Admin Activo';
-                    document.getElementById('adminToggleBtn').classList.remove('bg-gray-500');
-                    document.getElementById('adminToggleBtn').classList.add('bg-red-600');
-                    if (currentMonth) loadEventsForMonth(currentMonth);
+                    updateAdminUI();
                 } else if (pass !== null) alert('Contraseña incorrecta');
             }
         };
 
-        // ========== IMPRIMIR / EXPORTAR PDF (todos los eventos, A4) ==========
+        // ========== IMPRESIÓN EVENTOS ==========
         document.getElementById('printBtn').onclick = async () => {
-            const allEvents = [];
-            for (const month of meses) {
-                const q = query(collection(db, "eventos"), where("month", "==", month));
-                const snap = await getDocs(q);
-                snap.forEach(doc => allEvents.push({ month, ...doc.data() }));
+            if (!currentMonth) {
+                alert('Primero selecciona un mes para imprimir sus eventos.');
+                return;
             }
-            const grouped = {};
-            for (const ev of allEvents) {
-                if (!grouped[ev.month]) grouped[ev.month] = [];
-                grouped[ev.month].push(ev);
+
+            const q = query(collection(db, "eventos"), where("month", "==", currentMonth));
+            const snap = await getDocs(q);
+            const events = [];
+            snap.forEach(doc => events.push(doc.data()));
+            events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+            const mesName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
+            let printHtml = `<div style="max-width: 100%; font-family: sans-serif;"><h1 style="text-align: center; color: #1e40af; font-size: 24px; border-bottom: 2px solid #ccc; padding-bottom: 10px;">Historial Escolar 2026 - ${mesName}</h1>`;
+            
+            if (events.length === 0) {
+                printHtml += `<p style="text-align: center; margin-top: 20px;">No hay eventos en este mes.</p>`;
             }
-            // Ordenar todos los eventos por fecha dentro de cada mes
-            for (const key in grouped) {
-                grouped[key].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+            for (const ev of events) {
+                const d = new Date(ev.date);
+                d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+                const fecha = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                printHtml += `<div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 15px; break-inside: avoid;">
+                            <div style="font-size: 18px; font-weight: bold;">${escapeHtml(ev.title)}</div>
+                            <div style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">📅 ${fecha} | ${ev.turno}</div>
+                            <p style="margin: 0 0 10px 0; font-size: 15px; white-space: pre-wrap;">${escapeHtml(ev.description || '')}</p>`;
+                if (ev.images && ev.images.length) {
+                    printHtml += `<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px;">`;
+                    ev.images.forEach(img => printHtml += `<img src="${img}" style="width: calc(33.333% - 10px); min-width: 150px; height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">`);
+                    printHtml += `</div>`;
+                }
+                printHtml += `</div>`;
             }
-            let printHtml = '<div style="max-width: 100%; padding: 1cm; font-family: sans-serif; background: white;"><h1 style="text-align: center; color: #1e40af;">Historial Escolar 2026 - ESC 2020</h1>';
-            for (const month of meses) {
-                if (grouped[month]) {
-                    printHtml += `<h2 style="margin-top: 20px; border-bottom: 2px solid #3b82f6;">${month.toUpperCase()}</h2>`;
-                    for (const ev of grouped[month]) {
-                        const fecha = new Date(ev.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-                        printHtml += `<div style="border-bottom: 1px solid #ccc; margin-bottom: 15px; padding-bottom: 10px; break-inside: avoid;">
-                                    <strong>${escapeHtml(ev.title)}</strong> - ${fecha}<br>
-                                    <em>Turno: ${ev.turno}</em><br>
-                                    <p>${escapeHtml(ev.description || '')}</p>`;
-                        if (ev.images && ev.images.length) {
-                            printHtml += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px;">`;
-                            ev.images.forEach(img => printHtml += `<img src="${img}" style="width: 100%; max-height: 100px; object-fit: cover;">`);
-                            printHtml += `</div>`;
-                        }
-                        printHtml += `</div>`;
+            printHtml += `</div>`;
+            const pa = document.getElementById('printArea');
+            pa.innerHTML = printHtml;
+            pa.style.display = 'block';
+            window.print();
+            pa.style.display = 'none';
+        };
+
+        // ========== CARÁTULAS ==========
+        document.getElementById('caratulasBtn').onclick = () => {
+            openModal('modalCaratulas');
+            loadCaratulas();
+        };
+
+        document.getElementById('caratulaBgInput').addEventListener('change', async (e) => {
+            if (e.target.files[0]) {
+                const b64 = await compressImage(e.target.files[0], 1000, 0.6);
+                document.getElementById('caratulaPreviewBg').style.backgroundImage = `url("${b64}")`;
+            }
+        });
+        document.getElementById('caratulaClearBgBtn').onclick = () => {
+            document.getElementById('caratulaPreviewBg').style.backgroundImage = '';
+            document.getElementById('caratulaBgInput').value = '';
+        };
+
+        function updateCaratulaPreview() {
+            const t = document.getElementById('caratulaPreviewText');
+            t.textContent = document.getElementById('caratulaNombre').value;
+            t.style.color = document.getElementById('caratulaColor').value;
+            t.style.fontSize = document.getElementById('caratulaSize').value;
+        }
+        document.getElementById('caratulaNombre').addEventListener('input', updateCaratulaPreview);
+        document.getElementById('caratulaColor').addEventListener('change', updateCaratulaPreview);
+        document.getElementById('caratulaSize').addEventListener('change', updateCaratulaPreview);
+
+        document.getElementById('caratulaSaveBtn').onclick = async () => {
+            const nom = document.getElementById('caratulaNombre').value.trim();
+            const col = document.getElementById('caratulaColor').value;
+            const size = document.getElementById('caratulaSize').value;
+            const bgStr = document.getElementById('caratulaPreviewBg').style.backgroundImage;
+            const bg = bgStr && bgStr !== 'none' ? bgStr.slice(5, -2) : null;
+            if (!nom && !bg) return alert('Agrega texto o imagen');
+
+            const btn = document.getElementById('caratulaSaveBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            try {
+                await addDoc(collection(db, "caratulas"), {
+                    nombreTexto: nom, colorTexto: col, fontSize: size, imagenFondo: bg, createdAt: new Date().toISOString()
+                });
+                alert('¡Guardada!');
+                loadCaratulas();
+            } catch (e) { console.error(e); alert('Error al guardar'); }
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar en Nube';
+        };
+
+        async function loadCaratulas() {
+            const c = document.getElementById('caratulasList');
+            c.innerHTML = '<p class="text-sm">Cargando...</p>';
+            const snap = await getDocs(query(collection(db, "caratulas")));
+            let h = '';
+            snap.forEach(d => {
+                const dt = d.data();
+                const bg = dt.imagenFondo ? `background-image: url('${dt.imagenFondo}');` : '';
+                h += `<div class="border rounded-xl p-3 bg-gray-50 flex flex-col items-center shadow-sm">
+                    <div class="w-full aspect-[1/1.414] bg-cover bg-center relative border mb-3 print-bg-adjust" style="${bg}">
+                        <div class="absolute inset-0 flex items-center justify-center font-bold text-center p-2 break-words uppercase" style="color: ${dt.colorTexto || 'black'}; font-size: ${dt.fontSize ? 'calc(' + dt.fontSize + ' * 0.4)' : '1rem'}">${escapeHtml(dt.nombreTexto || '')}</div>
+                    </div>
+                    <div class="flex gap-2 w-full">
+                        <button class="bg-green-600 hover:bg-green-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" onclick="printCaratulaSaved('${d.id}')"><i class="fa-solid fa-print"></i></button>
+                        ${isAdmin ? `<button class="bg-red-600 hover:bg-red-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition admin-only" onclick="deleteCaratula('${d.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
+                </div>`;
+            });
+            if (!h) h = '<p class="text-sm text-gray-500 col-span-full">No hay carátulas guardadas.</p>';
+            c.innerHTML = h;
+        }
+
+        window.deleteCaratula = async (id) => {
+            if (confirm('¿Eliminar esta carátula?')) {
+                await deleteDoc(doc(db, "caratulas", id));
+                loadCaratulas();
+            }
+        };
+
+        function doPrintA4(bgUrl, text, color, size) {
+            document.body.classList.add('printing-fullpage');
+            const pa = document.getElementById('printArea');
+            pa.innerHTML = `
+                <div class="print-bg-adjust" style="width: 100vw; height: 100vh; position: relative; background-size: cover; background-position: center; background-image: ${bgUrl || 'none'};">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${size}; padding: 2cm; word-break: break-word; text-transform: uppercase;">
+                        ${escapeHtml(text || '')}
+                    </div>
+                </div>
+            `;
+            pa.style.display = 'block';
+            window.print();
+            pa.style.display = 'none';
+            document.body.classList.remove('printing-fullpage');
+        }
+
+        document.getElementById('caratulaPrintCurrentBtn').onclick = () => {
+            const bg = document.getElementById('caratulaPreviewBg').style.backgroundImage;
+            doPrintA4(bg, document.getElementById('caratulaNombre').value, document.getElementById('caratulaColor').value, document.getElementById('caratulaSize').value);
+        };
+
+        window.printCaratulaSaved = async (id) => {
+            const snap = await getDocs(query(collection(db, "caratulas"), where("__name__", "==", id)));
+            if (!snap.empty) {
+                const d = snap.docs[0].data();
+                const bg = d.imagenFondo ? `url("${d.imagenFondo}")` : '';
+                doPrintA4(bg, d.nombreTexto, d.colorTexto, d.fontSize);
+            }
+        };
+
+        // ========== PORTADA ==========
+        document.getElementById('portadaBtn').onclick = () => openModal('modalPortada');
+
+        document.getElementById('portadaBgInput').addEventListener('change', async (e) => {
+            if (e.target.files[0]) {
+                const b64 = await compressImage(e.target.files[0], 1200, 0.7);
+                document.getElementById('portadaPreviewBg').style.backgroundImage = `url("${b64}")`;
+            }
+        });
+        document.getElementById('portadaBgUrl').addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (url) document.getElementById('portadaPreviewBg').style.backgroundImage = `url("${url}")`;
+        });
+        document.getElementById('portadaTexto').addEventListener('input', (e) => {
+            document.getElementById('portadaPreviewText').textContent = e.target.value;
+        });
+        document.getElementById('portadaPrintBtn').onclick = () => {
+            const bg = document.getElementById('portadaPreviewBg').style.backgroundImage;
+            const txt = document.getElementById('portadaTexto').value;
+            document.body.classList.add('printing-fullpage');
+            const pa = document.getElementById('printArea');
+            pa.innerHTML = `
+                <div class="print-bg-adjust" style="width: 100vw; height: 100vh; position: relative; background-size: cover; background-position: center; background-image: ${bg};">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: white; text-shadow: 0px 4px 10px rgba(0,0,0,0.8); font-size: 6vw; padding: 1cm; word-break: break-word; text-transform: uppercase;">
+                        ${escapeHtml(txt)}
+                    </div>
+                </div>
+            `;
+            pa.style.display = 'block';
+            window.print();
+            pa.style.display = 'none';
+            document.body.classList.remove('printing-fullpage');
+        };
+
+        // ========== ORGANIZACIÓN ESCOLAR ==========
+        document.getElementById('orgEscolarBtn').onclick = () => {
+            openModal('modalOrgEscolar');
+            loadOrgTablesList();
+            if (!document.getElementById('orgTableContainer').querySelector('table')) {
+                document.getElementById('orgGenerateBtn').click();
+            }
+        };
+
+        function generateTable(r, c) {
+            const t = document.createElement('table'); t.id = 'orgTable';
+            const tb = document.createElement('tbody');
+            for (let i = 0; i < r; i++) {
+                const tr = document.createElement('tr');
+                for (let j = 0; j < c; j++) {
+                    const td = document.createElement('td');
+                    td.contentEditable = true; td.dataset.r = i; td.dataset.c = j;
+                    tr.appendChild(td);
+                }
+                tb.appendChild(tr);
+            }
+            t.appendChild(tb); return t;
+        }
+
+        document.getElementById('orgGenerateBtn').onclick = () => {
+            const r = parseInt(document.getElementById('orgRows').value) || 4;
+            const c = parseInt(document.getElementById('orgCols').value) || 3;
+            document.getElementById('orgTableContainer').innerHTML = '';
+            document.getElementById('orgTableContainer').appendChild(generateTable(r, c));
+        };
+
+        // Selección de celdas
+        const orgTC = document.getElementById('orgTableContainer');
+        let isSelecting = false;
+
+        function clearSelection() {
+            orgTC.querySelectorAll('td.selected').forEach(td => td.classList.remove('selected'));
+        }
+
+        orgTC.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'TD') {
+                isSelecting = true;
+                clearSelection();
+                e.target.classList.add('selected');
+            }
+        });
+        orgTC.addEventListener('mouseover', (e) => {
+            if (isSelecting && e.target.tagName === 'TD') e.target.classList.add('selected');
+        });
+        document.addEventListener('mouseup', () => isSelecting = false);
+
+        function getSelectionBox() {
+            const sel = Array.from(orgTC.querySelectorAll('td.selected'));
+            if (!sel.length) return null;
+            let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+            sel.forEach(td => {
+                const r = parseInt(td.dataset.r), c = parseInt(td.dataset.c);
+                if (r < minR) minR = r; if (r > maxR) maxR = r; if (c < minC) minC = c; if (c > maxC) maxC = c;
+            });
+            return { minR, maxR, minC, maxC };
+        }
+
+        document.getElementById('orgMergeBtn').onclick = () => {
+            const box = getSelectionBox(); if (!box) return;
+            const { minR, maxR, minC, maxC } = box;
+            const topLeft = orgTC.querySelector(`td[data-r="${minR}"][data-c="${minC}"]`);
+            if (!topLeft) return;
+
+            topLeft.rowSpan = maxR - minR + 1;
+            topLeft.colSpan = maxC - minC + 1;
+
+            let combined = topLeft.innerHTML;
+            for (let r = minR; r <= maxR; r++) {
+                for (let c = minC; c <= maxC; c++) {
+                    if (r === minR && c === minC) continue;
+                    const td = orgTC.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+                    if (td && td.style.display !== 'none') {
+                        if (td.innerHTML.trim() && td.innerHTML !== '<br>') combined += ' ' + td.innerHTML;
+                        td.style.display = 'none'; td.dataset.merged = "true";
                     }
                 }
             }
-            printHtml += `</div>`;
-            const printArea = document.getElementById('printArea');
-            printArea.innerHTML = printHtml;
-            printArea.style.display = 'block';
+            topLeft.innerHTML = combined;
+            clearSelection();
+        };
+
+        document.getElementById('orgSplitBtn').onclick = () => {
+            const sel = Array.from(orgTC.querySelectorAll('td.selected'));
+            if (!sel.length) return;
+            const td = sel[0];
+            const rs = td.rowSpan, cs = td.colSpan;
+            if (rs > 1 || cs > 1) {
+                const r = parseInt(td.dataset.r), c = parseInt(td.dataset.c);
+                td.rowSpan = 1; td.colSpan = 1;
+                for (let i = r; i < r + rs; i++) {
+                    for (let j = c; j < c + cs; j++) {
+                        if (i === r && j === c) continue;
+                        const cell = orgTC.querySelector(`td[data-r="${i}"][data-c="${j}"]`);
+                        if (cell) { cell.style.display = ''; delete cell.dataset.merged; }
+                    }
+                }
+            }
+            clearSelection();
+        };
+
+        document.getElementById('orgMergeRowBtn').onclick = () => {
+            const sel = Array.from(orgTC.querySelectorAll('td.selected'));
+            if (!sel.length) return;
+            const rows = new Set(sel.map(td => td.dataset.r));
+            rows.forEach(r => {
+                orgTC.querySelectorAll(`td[data-r="${r}"]`).forEach(td => {
+                    if (td.style.display !== 'none') td.classList.add('selected');
+                });
+            });
+            document.getElementById('orgMergeBtn').click();
+        };
+
+        // Firebase Tablas
+        async function loadOrgTablesList() {
+            const s = document.getElementById('orgLoadSelect');
+            s.innerHTML = '<option value="">-- Cargar tabla guardada --</option>';
+            const snap = await getDocs(query(collection(db, "tablas_organizacion")));
+            snap.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id; opt.textContent = d.data().nombre;
+                opt.dataset.html = d.data().html;
+                s.appendChild(opt);
+            });
+            updateAdminUI();
+        }
+
+        document.getElementById('orgSaveBtn').onclick = async () => {
+            const nom = document.getElementById('orgSaveName').value.trim();
+            if (!nom) return alert('Ingresa nombre de tabla');
+            clearSelection();
+            const html = orgTC.innerHTML;
+            const btn = document.getElementById('orgSaveBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            await addDoc(collection(db, "tablas_organizacion"), { nombre: nom, html, fechaCreacion: new Date().toISOString() });
+            alert('Tabla guardada');
+            document.getElementById('orgSaveName').value = '';
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar';
+            loadOrgTablesList();
+        };
+
+        document.getElementById('orgLoadBtn').onclick = () => {
+            const s = document.getElementById('orgLoadSelect');
+            const opt = s.options[s.selectedIndex];
+            if (opt && opt.value) orgTC.innerHTML = opt.dataset.html;
+        };
+
+        document.getElementById('orgDeleteBtn').onclick = async () => {
+            const id = document.getElementById('orgLoadSelect').value;
+            if (!id) return;
+            if (confirm('¿Eliminar esta tabla en la nube?')) {
+                await deleteDoc(doc(db, "tablas_organizacion", id));
+                orgTC.innerHTML = '';
+                loadOrgTablesList();
+            }
+        };
+
+        document.getElementById('orgPrintBtn').onclick = () => {
+            clearSelection();
+            document.body.classList.add('printing-table');
+            const pa = document.getElementById('printArea');
+            pa.innerHTML = `
+                <div style="font-family: sans-serif; background: white; width: 100%;">
+                    <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px; color: #0f766e;">ORGANIZACIÓN ESCOLAR</h1>
+                    <style>
+                        #printArea table { width: 100%; border-collapse: collapse; }
+                        #printArea td, #printArea th { border: 1px solid #000; padding: 10px; vertical-align: top; }
+                        #printArea td[style*="display: none"] { display: none !important; }
+                    </style>
+                    ${orgTC.innerHTML}
+                </div>
+            `;
+            pa.style.display = 'block';
             window.print();
-            printArea.style.display = 'none';
+            pa.style.display = 'none';
+            document.body.classList.remove('printing-table');
         };
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
 
-        // Inicializar el menú
+        // Init
         renderMonthMenu();
     </script>
 </body>
