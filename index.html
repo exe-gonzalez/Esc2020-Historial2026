@@ -100,6 +100,38 @@
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
+
+        /* Estilos para imágenes de eventos (Pantalla) */
+        .event-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            max-width: 100px;
+        }
+
+        @media (min-width: 768px) {
+            .event-img {
+                max-width: 120px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .event-img {
+                max-width: 150px;
+            }
+        }
+
+        /* Estilos para imágenes de eventos (Impresión) */
+        @media print {
+            .event-img {
+                aspect-ratio: auto !important;
+                object-fit: contain !important;
+                max-height: 200px !important;
+                width: auto !important;
+                max-width: none !important;
+                background-color: white !important;
+            }
+        }
     </style>
 </head>
 
@@ -525,7 +557,7 @@
                 const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
                 const turnoMostrar = ev.turno || '';
                 const imagenesHtml = ev.images && ev.images.length ?
-                    `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 justify-content-center" style="justify-content: center; margin: auto;">${ev.images.map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-80 transition border" style="margin: auto;" onclick="window.open(this.src)">`).join('')}</div>` :
+                    `<div class="flex flex-wrap justify-center gap-4 mt-4">${ev.images.map(img => `<img src="${img}" class="event-img rounded-lg shadow-sm cursor-pointer hover:opacity-80 transition border" onclick="window.open(this.src)">`).join('')}</div>` :
                     '';
 
                 html += `
@@ -760,7 +792,7 @@
 
             const mesName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
             let printHtml = `<div style="max-width: 100%; font-family: sans-serif;"><h1 style="text-align: center; color: #1e40af; font-size: 24px; border-bottom: 2px solid #ccc; padding-bottom: 10px;">Historial Escolar 2026 - ${mesName}</h1>`;
-            
+
             if (events.length === 0) {
                 printHtml += `<p style="text-align: center; margin-top: 20px;">No hay eventos en este mes.</p>`;
             }
@@ -775,7 +807,7 @@
                             <p style="margin: 0 0 10px 0; font-size: 15px; white-space: pre-wrap;">${escapeHtml(ev.description || '')}</p>`;
                 if (ev.images && ev.images.length) {
                     printHtml += `<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px;">`;
-                    ev.images.forEach(img => printHtml += `<img src="${img}" style="width: calc(33.333% - 10px); min-width: 150px; height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">`);
+                    ev.images.forEach(img => printHtml += `<img src="${img}" class="event-img" style="border-radius: 4px; border: 1px solid #ccc;">`);
                     printHtml += `</div>`;
                 }
                 printHtml += `</div>`;
