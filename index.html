@@ -846,29 +846,104 @@
             events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
             const mesName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
-            let printHtml = `<div style="max-width: 100%; font-family: sans-serif;"><h1 style="text-align: center; color: #1e40af; font-size: 24px; border-bottom: 2px solid #ccc; padding-bottom: 10px;">Historial Escolar 2026 - ${mesName}</h1>`;
+
+            // Generar HTML de impresión usando la estructura y clases originales
+            let printHtml = `
+            <div class="max-w-5xl mx-auto">
+                <h1 class="text-center text-blue-800 text-3xl font-bold border-b-2 border-gray-300 pb-3 mb-6">Historial Escolar 2026 - ${mesName}</h1>`;
 
             if (events.length === 0) {
-                printHtml += `<p style="text-align: center; margin-top: 20px;">No hay eventos en este mes.</p>`;
+                printHtml += `<p class="text-center mt-6 text-gray-500 text-lg">No hay eventos en este mes.</p>`;
             }
 
             for (const ev of events) {
                 const d = new Date(ev.date);
                 d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
                 const fecha = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-                printHtml += `<div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 15px; break-inside: avoid;">
-                            <div style="font-size: 18px; font-weight: bold;">${escapeHtml(ev.title)}</div>
-                            <div style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">📅 ${fecha} | ${ev.turno}</div>
-                            <p style="margin: 0 0 10px 0; font-size: 15px; white-space: pre-wrap;">${escapeHtml(ev.description || '')}</p>`;
+
+                printHtml += `
+                <div class="border-b border-gray-200 mb-6 pb-6 break-inside-avoid">
+                    <h4 class="font-bold text-2xl text-gray-800">${escapeHtml(ev.title)}</h4>
+                    <p class="text-sm text-blue-600 font-semibold mt-1 mb-3">📅 ${fecha} | ${ev.turno}</p>
+                    <p class="text-gray-800 text-base mt-2 mb-4 whitespace-pre-wrap">${escapeHtml(ev.description || '')}</p>`;
+
                 if (ev.images && ev.images.length) {
-                    printHtml += `<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px;">`;
-                    ev.images.forEach(img => printHtml += `<img src="${img}" class="event-img" style="border-radius: 4px; border: 1px solid #ccc;">`);
+                    printHtml += `<div class="flex flex-wrap gap-4 mt-4 justify-center">`;
+                    ev.images.forEach(img => {
+                        printHtml += `<img src="${img}" class="event-img rounded-lg border shadow-sm">`;
+                    });
                     printHtml += `</div>`;
                 }
                 printHtml += `</div>`;
             }
             printHtml += `</div>`;
-            window.imprimirEnNuevaVentana(printHtml, `Eventos - ${mesName}`);
+
+            // Nueva estrategia de impresión para asegurar carga de imágenes en móviles
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            if (!printWindow) {
+                alert('Por favor, permite las ventanas emergentes (pop-ups) para imprimir.');
+                return;
+            }
+
+            // Copiamos el head completo (incluye los estilos CSS de @media print originales)
+            const headHtml = document.head.innerHTML;
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    ${headHtml}
+                </head>
+                <body class="bg-white">
+                    <div id="printMessage" class="flex flex-col items-center justify-center min-h-screen">
+                        <div class="loader mb-4"></div>
+                        <p class="text-blue-600 font-bold text-xl">Preparando impresión...</p>
+                        <p class="text-gray-500 mt-2 text-sm">Cargando imágenes de alta calidad</p>
+                    </div>
+                    
+                    <!-- Contenedor con id="printArea" para que apliquen las reglas de @media print originales -->
+                    <div id="printArea" style="display: none; position: relative;">
+                        ${printHtml}
+                    </div>
+                    
+                    <script>
+                        window.onload = () => {
+                            const images = Array.from(document.querySelectorAll('#printArea img'));
+                            
+                            if (images.length === 0) {
+                                printReady();
+                                return;
+                            }
+
+                            const promises = images.map(img => {
+                                if (img.complete) return Promise.resolve();
+                                return new Promise((resolve) => {
+                                    img.onload = resolve;
+                                    img.onerror = resolve; // No bloqueamos la impresión si una imagen falla
+                                });
+                            });
+                            
+                            Promise.all(promises).then(() => {
+                                // Pequeño margen para que el navegador renderice bien las imágenes ya cargadas
+                                setTimeout(printReady, 300);
+                            });
+                            
+                            function printReady() {
+                                document.getElementById('printMessage').style.display = 'none';
+                                document.getElementById('printArea').style.display = 'block';
+                                
+                                // Damos un pequeño respiro al DOM antes de llamar a print()
+                                setTimeout(() => {
+                                    window.print();
+                                    window.close();
+                                }, 500);
+                            }
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         };
 
         // ========== CARÁTULAS ==========
@@ -1044,7 +1119,7 @@
         document.getElementById('portadaPrintBtn').onclick = () => {
             // Clonamos exactamente la vista previa del modal (mantiene fondo, texto, color y tamaño)
             const previewClone = document.getElementById('portadaPreview').cloneNode(true);
-            
+
             // Forzamos los estilos para que ocupe todo el A4 sin márgenes ni sombras
             previewClone.style.width = '100%';
             previewClone.style.height = '100vh';
