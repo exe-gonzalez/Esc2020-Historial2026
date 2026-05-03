@@ -74,13 +74,13 @@
         }
 
         /* Estilos para la tabla interactiva */
-        #orgTable {
+        .org-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
         }
 
-        #orgTable td {
+        .org-table td {
             border: 1px solid #333;
             padding: 8px;
             min-width: 40px;
@@ -89,7 +89,7 @@
             cursor: text;
         }
 
-        #orgTable td.selected {
+        .org-table td.selected {
             background-color: #e0f2fe !important;
             outline: 2px solid #3b82f6;
             z-index: 10;
@@ -131,6 +131,22 @@
                 max-width: none !important;
                 background-color: white !important;
             }
+        }
+
+        /* Listado de tablas guardadas */
+        .saved-table-card {
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            transition: box-shadow 0.2s;
+        }
+        .saved-table-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -380,7 +396,7 @@
             </h2>
 
             <!-- Toolbar Superior -->
-            <div class="bg-gray-100 p-3 rounded-xl flex flex-wrap gap-4 items-end mb-4 border">
+            <div class="bg-gray-100 p-3 rounded-xl flex flex-wrap gap-3 items-end mb-4 border">
                 <div class="flex gap-2 bg-white p-2 rounded shadow-sm border">
                     <div>
                         <label class="block text-xs font-bold text-gray-600">Columnas</label>
@@ -395,6 +411,14 @@
                     <button id="orgGenerateBtn"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold mt-4"><i
                             class="fa-solid fa-table"></i> Crear</button>
+                </div>
+
+                <!-- Agregar/quitar filas y columnas -->
+                <div class="flex gap-1 bg-white p-2 rounded shadow-sm border mt-auto">
+                    <button id="orgAddRowBtn" class="px-2 py-1 border rounded hover:bg-green-100 text-xs font-semibold text-green-700" title="Agregar fila"><i class="fa-solid fa-plus"></i> Fila</button>
+                    <button id="orgDelRowBtn" class="px-2 py-1 border rounded hover:bg-red-100 text-xs font-semibold text-red-700" title="Eliminar última fila"><i class="fa-solid fa-minus"></i> Fila</button>
+                    <button id="orgAddColBtn" class="px-2 py-1 border rounded hover:bg-green-100 text-xs font-semibold text-green-700" title="Agregar columna"><i class="fa-solid fa-plus"></i> Col</button>
+                    <button id="orgDelColBtn" class="px-2 py-1 border rounded hover:bg-red-100 text-xs font-semibold text-red-700" title="Eliminar última columna"><i class="fa-solid fa-minus"></i> Col</button>
                 </div>
 
                 <div class="flex gap-1 bg-white p-2 rounded shadow-sm border mt-auto">
@@ -415,52 +439,51 @@
                 <div class="flex gap-2 bg-white p-2 rounded shadow-sm border mt-auto">
                     <button id="orgMergeBtn"
                         class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm font-semibold"><i
-                            class="fa-solid fa-object-group"></i> Combinar Selección</button>
+                            class="fa-solid fa-object-group"></i> Combinar</button>
                     <button id="orgSplitBtn"
                         class="bg-yellow-700 hover:bg-yellow-800 text-white px-3 py-1 rounded text-sm font-semibold"><i
                             class="fa-solid fa-object-ungroup"></i> Dividir</button>
                     <button id="orgMergeRowBtn"
                         class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold"><i
-                            class="fa-solid fa-arrows-left-right"></i> Combinar Fila</button>
-                </div>
-
-                <div class="flex-1 flex justify-end mt-auto">
-                    <button id="orgPrintBtn"
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow"><i
-                            class="fa-solid fa-print"></i> Imprimir Tabla</button>
+                            class="fa-solid fa-arrows-left-right"></i> Fila completa</button>
                 </div>
             </div>
 
-            <!-- Guardar / Cargar -->
-            <div
-                class="flex flex-col md:flex-row gap-4 mb-4 bg-teal-50 p-3 rounded-xl items-center border border-teal-100">
+            <!-- Guardar -->
+            <div class="flex flex-col md:flex-row gap-4 mb-4 bg-teal-50 p-3 rounded-xl items-center border border-teal-100">
                 <div class="flex-1 flex gap-2 w-full">
-                    <input type="text" id="orgSaveName" placeholder="Nombre para guardar (ej. Horarios)"
+                    <input type="text" id="orgSaveName" placeholder="Nombre para guardar (ej. Planta Funcional)"
                         class="flex-1 border p-2 rounded shadow-sm focus:ring-2 focus:ring-teal-500">
+                    <input type="hidden" id="orgEditingId" value="">
                     <button id="orgSaveBtn"
                         class="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded font-semibold shadow-sm"><i
                             class="fa-solid fa-cloud-arrow-up"></i> Guardar</button>
                 </div>
-                <div class="flex-1 flex gap-2 w-full">
-                    <select id="orgLoadSelect" class="flex-1 border p-2 rounded shadow-sm">
-                        <option value="">-- Cargar tabla guardada --</option>
-                    </select>
-                    <button id="orgLoadBtn"
-                        class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded font-semibold shadow-sm"><i
-                            class="fa-solid fa-cloud-arrow-down"></i> Cargar</button>
-                    <button id="orgDeleteBtn"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold admin-only hidden shadow-sm"><i
-                            class="fa-solid fa-trash"></i></button>
+                <div class="flex gap-2">
+                    <button id="orgPrintBtn"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow"><i
+                            class="fa-solid fa-print"></i> Imprimir actual</button>
+                    <button id="orgPrintAllBtn"
+                        class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg font-bold shadow"><i
+                            class="fa-solid fa-file-pdf"></i> Imprimir todas</button>
                 </div>
             </div>
 
             <!-- Área de la Tabla -->
             <p class="text-sm text-gray-600 mb-2 font-medium"><i class="fa-solid fa-circle-info"></i> Haz clic y
-                arrastra para seleccionar celdas, luego usa "Combinar Selección". Haz clic en cualquier celda para
+                arrastra para seleccionar celdas, luego usa "Combinar". Haz clic en cualquier celda para
                 escribir.</p>
-            <div class="overflow-x-auto border border-gray-400 p-6 min-h-[400px] bg-white relative shadow-inner"
+            <div class="overflow-x-auto border border-gray-400 p-4 min-h-[300px] bg-white relative shadow-inner mb-6"
                 id="orgTableContainer">
                 <!-- La tabla se genera aquí -->
+            </div>
+
+            <!-- Tablas guardadas -->
+            <div class="border-t-2 border-teal-200 pt-4">
+                <h3 class="text-xl font-bold text-teal-700 mb-3"><i class="fa-solid fa-database"></i> Tablas Guardadas</h3>
+                <div id="orgSavedList" class="space-y-3 max-h-[400px] overflow-y-auto">
+                    <!-- Se llena dinámicamente -->
+                </div>
             </div>
         </div>
     </div>
@@ -513,45 +536,109 @@
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
         window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
 
-        window.imprimirEnNuevaVentana = (contenidoHTML, titulo = 'Impresión') => {
-            const ventana = window.open('', '_blank');
+        // Detección de móvil
+        window.esMobile = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        // Función unificada de impresión (PC y Móvil)
+        window.imprimirUnificado = (contenidoHTML, titulo = 'Impresión', fullPage = false) => {
+            const ventana = window.open('', '_blank', 'width=800,height=600');
             if (!ventana) {
                 alert('Por favor, permite las ventanas emergentes (pop-ups) para imprimir.');
                 return;
             }
+
+            const estilosExtra = fullPage ? `
+                .fullpage-print { width: 100%; height: 100vh; position: relative; }
+                @media print {
+                    @page { margin: 0; size: A4; }
+                    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+                    .fullpage-print { width: 100%; height: 100vh; page-break-after: always; }
+                }
+            ` : `
+                @media print {
+                    @page { margin: 0; size: A4; }
+                    body { padding: 1cm; }
+                    table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    td, th { border: 1px solid #000; padding: 10px; vertical-align: top; }
+                    td[style*="display: none"] { display: none !important; }
+                    .page-break { page-break-before: always; }
+                }
+            `;
+
             ventana.document.write(`
                 <!DOCTYPE html>
                 <html lang="es">
                 <head>
                     <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>${titulo}</title>
                     <script src="https://cdn.tailwindcss.com"><\/script>
                     <style>
-                        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        @media print {
-                            @page { margin: 0; }
-                            body { margin: 0; }
-                            #printArea table { width: 100%; border-collapse: collapse; }
-                            #printArea td, #printArea th { border: 1px solid #000; padding: 10px; vertical-align: top; }
-                            #printArea td[style*="display: none"] { display: none !important; }
-                        }
+                        * { box-sizing: border-box; }
+                        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; font-family: sans-serif; }
+                        table { width: 100%; border-collapse: collapse; }
+                        td, th { border: 1px solid #333; padding: 8px; vertical-align: top; }
+                        td[style*="display: none"] { display: none !important; }
+                        ${estilosExtra}
                     </style>
                 </head>
                 <body>
-                    <div id="printArea">
+                    <div id="printLoadingMsg" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;">
+                        <div style="border:3px solid #f3f3f3;border-top:3px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div>
+                        <p style="color:#2563eb;font-weight:bold;font-size:1.25rem;margin-top:1rem;">Preparando impresión...</p>
+                        <p style="color:#6b7280;font-size:0.875rem;margin-top:0.5rem;">Cargando contenido</p>
+                        <style>@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}</style>
+                    </div>
+                    <div id="printContent" style="display:none;">
                         ${contenidoHTML}
                     </div>
                     <script>
-                        setTimeout(() => {
-                            window.print();
-                            window.close();
-                        }, 800);
+                        window.onload = function() {
+                            var imgs = Array.from(document.querySelectorAll('#printContent img'));
+                            var bgEls = Array.from(document.querySelectorAll('#printContent [style]')).filter(function(el) {
+                                return el.style.backgroundImage && el.style.backgroundImage !== 'none';
+                            });
+
+                            // Preload background images too
+                            var bgPromises = bgEls.map(function(el) {
+                                return new Promise(function(resolve) {
+                                    var url = el.style.backgroundImage.replace(/url\(["']?/, '').replace(/["']?\)/, '');
+                                    if (!url || url === 'none') { resolve(); return; }
+                                    var img = new Image();
+                                    img.onload = resolve;
+                                    img.onerror = resolve;
+                                    img.src = url;
+                                });
+                            });
+
+                            var imgPromises = imgs.map(function(img) {
+                                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                                return new Promise(function(resolve) {
+                                    img.onload = resolve;
+                                    img.onerror = resolve;
+                                });
+                            });
+
+                            Promise.all(imgPromises.concat(bgPromises)).then(function() {
+                                setTimeout(function() {
+                                    document.getElementById('printLoadingMsg').style.display = 'none';
+                                    document.getElementById('printContent').style.display = 'block';
+                                    setTimeout(function() {
+                                        window.print();
+                                    }, 400);
+                                }, 300);
+                            });
+                        };
                     <\/script>
                 </body>
                 </html>
             `);
             ventana.document.close();
         };
+
+        // Legacy alias
+        window.imprimirEnNuevaVentana = (contenidoHTML, titulo) => window.imprimirUnificado(contenidoHTML, titulo, false);
 
         // ========== LOGIN ==========
         document.getElementById('loginBtn').onclick = () => {
@@ -847,13 +934,12 @@
 
             const mesName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
-            // Generar HTML de impresión usando la estructura y clases originales
             let printHtml = `
-            <div class="max-w-5xl mx-auto">
-                <h1 class="text-center text-blue-800 text-3xl font-bold border-b-2 border-gray-300 pb-3 mb-6">Historial Escolar 2026 - ${mesName}</h1>`;
+            <div style="max-width: 900px; margin: 0 auto; padding: 1cm; font-family: sans-serif;">
+                <h1 style="text-align: center; color: #1e40af; font-size: 1.8rem; font-weight: bold; border-bottom: 2px solid #d1d5db; padding-bottom: 12px; margin-bottom: 24px;">Historial Escolar 2026 - ${mesName}</h1>`;
 
             if (events.length === 0) {
-                printHtml += `<p class="text-center mt-6 text-gray-500 text-lg">No hay eventos en este mes.</p>`;
+                printHtml += `<p style="text-align: center; margin-top: 24px; color: #6b7280; font-size: 1.125rem;">No hay eventos en este mes.</p>`;
             }
 
             for (const ev of events) {
@@ -862,15 +948,15 @@
                 const fecha = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
                 printHtml += `
-                <div class="border-b border-gray-200 mb-6 pb-6 break-inside-avoid">
-                    <h4 class="font-bold text-2xl text-gray-800">${escapeHtml(ev.title)}</h4>
-                    <p class="text-sm text-blue-600 font-semibold mt-1 mb-3">📅 ${fecha} | ${ev.turno}</p>
-                    <p class="text-gray-800 text-base mt-2 mb-4 whitespace-pre-wrap">${escapeHtml(ev.description || '')}</p>`;
+                <div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; padding-bottom: 24px; break-inside: avoid;">
+                    <h4 style="font-weight: bold; font-size: 1.3rem; color: #1f2937;">${escapeHtml(ev.title)}</h4>
+                    <p style="font-size: 0.875rem; color: #2563eb; font-weight: 600; margin-top: 4px; margin-bottom: 12px;">📅 ${fecha} | ${ev.turno}</p>
+                    <p style="color: #1f2937; font-size: 1rem; margin-top: 8px; margin-bottom: 16px; white-space: pre-wrap;">${escapeHtml(ev.description || '')}</p>`;
 
                 if (ev.images && ev.images.length) {
-                    printHtml += `<div class="flex flex-wrap gap-4 mt-4 justify-center">`;
+                    printHtml += `<div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; justify-content: center;">`;
                     ev.images.forEach(img => {
-                        printHtml += `<img src="${img}" class="event-img rounded-lg border shadow-sm">`;
+                        printHtml += `<img src="${img}" style="max-height: 200px; width: auto; border-radius: 8px; border: 1px solid #d1d5db;">`;
                     });
                     printHtml += `</div>`;
                 }
@@ -878,72 +964,7 @@
             }
             printHtml += `</div>`;
 
-            // Nueva estrategia de impresión para asegurar carga de imágenes en móviles
-            const printWindow = window.open('', '_blank', 'width=800,height=600');
-            if (!printWindow) {
-                alert('Por favor, permite las ventanas emergentes (pop-ups) para imprimir.');
-                return;
-            }
-
-            // Copiamos el head completo (incluye los estilos CSS de @media print originales)
-            const headHtml = document.head.innerHTML;
-
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    ${headHtml}
-                </head>
-                <body class="bg-white">
-                    <div id="printMessage" class="flex flex-col items-center justify-center min-h-screen">
-                        <div class="loader mb-4"></div>
-                        <p class="text-blue-600 font-bold text-xl">Preparando impresión...</p>
-                        <p class="text-gray-500 mt-2 text-sm">Cargando imágenes de alta calidad</p>
-                    </div>
-                    
-                    <!-- Contenedor con id="printArea" para que apliquen las reglas de @media print originales -->
-                    <div id="printArea" style="display: none; position: relative;">
-                        ${printHtml}
-                    </div>
-                    
-                    <script>
-                        window.onload = () => {
-                            const images = Array.from(document.querySelectorAll('#printArea img'));
-                            
-                            if (images.length === 0) {
-                                printReady();
-                                return;
-                            }
-
-                            const promises = images.map(img => {
-                                if (img.complete) return Promise.resolve();
-                                return new Promise((resolve) => {
-                                    img.onload = resolve;
-                                    img.onerror = resolve; // No bloqueamos la impresión si una imagen falla
-                                });
-                            });
-                            
-                            Promise.all(promises).then(() => {
-                                // Pequeño margen para que el navegador renderice bien las imágenes ya cargadas
-                                setTimeout(printReady, 300);
-                            });
-                            
-                            function printReady() {
-                                document.getElementById('printMessage').style.display = 'none';
-                                document.getElementById('printArea').style.display = 'block';
-                                
-                                // Damos un pequeño respiro al DOM antes de llamar a print()
-                                setTimeout(() => {
-                                    window.print();
-                                    window.close();
-                                }, 500);
-                            }
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+            window.imprimirUnificado(printHtml, `Historial ${mesName}`, false);
         };
 
         // ========== CARÁTULAS ==========
@@ -1024,13 +1045,13 @@
 
         function doPrintA4(bgUrl, text, color, size) {
             const html = `
-                <div class="print-bg-adjust" style="width: 100vw; height: 100vh; position: relative; background-size: cover; background-position: center; background-image: ${bgUrl || 'none'};">
-                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${size}; padding: 2cm; word-break: break-word; text-transform: uppercase;">
+                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${bgUrl || 'none'};">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${size}; padding: 2cm; word-break: break-word; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                         ${escapeHtml(text || '')}
                     </div>
                 </div>
             `;
-            window.imprimirEnNuevaVentana(html, 'Carátula');
+            window.imprimirUnificado(html, 'Carátula', true);
         }
 
         document.getElementById('caratulaPrintCurrentBtn').onclick = () => {
@@ -1117,19 +1138,21 @@
         });
 
         document.getElementById('portadaPrintBtn').onclick = () => {
-            // Clonamos exactamente la vista previa del modal (mantiene fondo, texto, color y tamaño)
-            const previewClone = document.getElementById('portadaPreview').cloneNode(true);
+            const preview = document.getElementById('portadaPreview');
+            const bgImage = document.getElementById('portadaPreviewBg').style.backgroundImage;
+            const textEl = document.getElementById('portadaPreviewText');
+            const text = textEl.textContent;
+            const color = textEl.style.color || 'white';
+            const fontSize = textEl.style.fontSize || '3rem';
 
-            // Forzamos los estilos para que ocupe todo el A4 sin márgenes ni sombras
-            previewClone.style.width = '100%';
-            previewClone.style.height = '100vh';
-            previewClone.style.maxWidth = 'none';
-            previewClone.style.aspectRatio = 'auto';
-            previewClone.style.border = 'none';
-            previewClone.style.boxShadow = 'none';
-            previewClone.style.margin = '0';
-
-            window.imprimirEnNuevaVentana(previewClone.outerHTML, 'Portada');
+            const html = `
+                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${bgImage || 'none'};">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${fontSize}; padding: 2cm; word-break: break-word; text-transform: uppercase; text-shadow: 0 4px 4px rgba(0,0,0,0.8);">
+                        ${escapeHtml(text || '')}
+                    </div>
+                </div>
+            `;
+            window.imprimirUnificado(html, 'Portada', true);
         };
 
         // ========== ORGANIZACIÓN ESCOLAR ==========
@@ -1142,7 +1165,7 @@
         };
 
         function generateTable(r, c) {
-            const t = document.createElement('table'); t.id = 'orgTable';
+            const t = document.createElement('table'); t.className = 'org-table';
             const tb = document.createElement('tbody');
             for (let i = 0; i < r; i++) {
                 const tr = document.createElement('tr');
@@ -1161,6 +1184,59 @@
             const c = parseInt(document.getElementById('orgCols').value) || 3;
             document.getElementById('orgTableContainer').innerHTML = '';
             document.getElementById('orgTableContainer').appendChild(generateTable(r, c));
+            document.getElementById('orgEditingId').value = '';
+            document.getElementById('orgSaveName').value = '';
+        };
+
+        // Agregar/eliminar filas y columnas
+        document.getElementById('orgAddRowBtn').onclick = () => {
+            const table = orgTC.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody') || table;
+            const rows = tbody.querySelectorAll('tr');
+            const lastRow = rows[rows.length - 1];
+            const colCount = lastRow ? lastRow.querySelectorAll('td').length : 3;
+            const newRowIdx = rows.length;
+            const tr = document.createElement('tr');
+            for (let j = 0; j < colCount; j++) {
+                const td = document.createElement('td');
+                td.contentEditable = true; td.dataset.r = newRowIdx; td.dataset.c = j;
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        };
+
+        document.getElementById('orgDelRowBtn').onclick = () => {
+            const table = orgTC.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody') || table;
+            const rows = tbody.querySelectorAll('tr');
+            if (rows.length > 1) rows[rows.length - 1].remove();
+        };
+
+        document.getElementById('orgAddColBtn').onclick = () => {
+            const table = orgTC.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody') || table;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((tr, i) => {
+                const td = document.createElement('td');
+                td.contentEditable = true;
+                td.dataset.r = i;
+                td.dataset.c = tr.querySelectorAll('td').length;
+                tr.appendChild(td);
+            });
+        };
+
+        document.getElementById('orgDelColBtn').onclick = () => {
+            const table = orgTC.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody') || table;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                if (cells.length > 1) cells[cells.length - 1].remove();
+            });
         };
 
         // Selección de celdas
@@ -1249,64 +1325,196 @@
             document.getElementById('orgMergeBtn').click();
         };
 
-        // Firebase Tablas
+        // Firebase Tablas - Listado con tarjetas
         async function loadOrgTablesList() {
-            const s = document.getElementById('orgLoadSelect');
-            s.innerHTML = '<option value="">-- Cargar tabla guardada --</option>';
-            const snap = await getDocs(query(collection(db, "tablas_organizacion")));
-            snap.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.id; opt.textContent = d.data().nombre;
-                opt.dataset.html = d.data().html;
-                s.appendChild(opt);
-            });
-            updateAdminUI();
+            const listEl = document.getElementById('orgSavedList');
+            listEl.innerHTML = '<p class="text-sm text-gray-500"><i class="fa-solid fa-spinner fa-spin"></i> Cargando tablas...</p>';
+            try {
+                const snap = await getDocs(query(collection(db, "tablas_organizacion")));
+                const tablas = [];
+                snap.forEach(d => tablas.push({ id: d.id, ...d.data() }));
+                tablas.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
+
+                if (tablas.length === 0) {
+                    listEl.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No hay tablas guardadas aún.</p>';
+                    return;
+                }
+
+                let h = '';
+                tablas.forEach(t => {
+                    const fecha = t.fechaCreacion ? new Date(t.fechaCreacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+                    h += `
+                    <div class="saved-table-card" data-tablaid="${t.id}">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-teal-800 truncate text-lg">${escapeHtml(t.nombre)}</p>
+                            <p class="text-xs text-gray-500"><i class="fa-regular fa-calendar"></i> ${fecha}</p>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0">
+                            <button class="org-load-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Cargar en editor"><i class="fa-solid fa-pen-to-square"></i> Cargar</button>
+                            <button class="org-print-one-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Imprimir esta tabla"><i class="fa-solid fa-print"></i></button>
+                            ${isAdmin ? `<button class="org-del-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>`;
+                });
+                listEl.innerHTML = h;
+
+                // Event listeners para botones de tarjetas
+                listEl.querySelectorAll('.org-load-btn').forEach(btn => {
+                    btn.onclick = () => loadOrgTable(btn.dataset.id);
+                });
+                listEl.querySelectorAll('.org-print-one-btn').forEach(btn => {
+                    btn.onclick = () => printOrgTableById(btn.dataset.id);
+                });
+                listEl.querySelectorAll('.org-del-btn').forEach(btn => {
+                    btn.onclick = () => deleteOrgTable(btn.dataset.id);
+                });
+            } catch (e) {
+                console.error(e);
+                listEl.innerHTML = '<p class="text-sm text-red-500">Error al cargar tablas.</p>';
+            }
         }
 
+        // Cargar tabla en el editor
+        async function loadOrgTable(id) {
+            try {
+                const docSnap = await getDoc(doc(db, "tablas_organizacion", id));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    orgTC.innerHTML = data.html;
+                    document.getElementById('orgSaveName').value = data.nombre || '';
+                    document.getElementById('orgEditingId').value = id;
+                    // Scroll al editor
+                    orgTC.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error al cargar la tabla');
+            }
+        }
+
+        // Imprimir una tabla guardada
+        async function printOrgTableById(id) {
+            try {
+                const docSnap = await getDoc(doc(db, "tablas_organizacion", id));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const html = `
+                        <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm;">
+                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(data.nombre || 'ORGANIZACIÓN ESCOLAR')}</h1>
+                            ${data.html}
+                        </div>
+                    `;
+                    window.imprimirUnificado(html, data.nombre || 'Tabla', false);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error al imprimir la tabla');
+            }
+        }
+
+        // Eliminar tabla (solo admin)
+        async function deleteOrgTable(id) {
+            if (!isAdmin) { alert('Solo el administrador puede eliminar tablas.'); return; }
+            if (confirm('¿Eliminar esta tabla permanentemente?')) {
+                await deleteDoc(doc(db, "tablas_organizacion", id));
+                // Si estábamos editando esta tabla, limpiar editor
+                if (document.getElementById('orgEditingId').value === id) {
+                    document.getElementById('orgEditingId').value = '';
+                    document.getElementById('orgSaveName').value = '';
+                }
+                loadOrgTablesList();
+            }
+        }
+
+        // Guardar tabla (nueva o actualizar existente)
         document.getElementById('orgSaveBtn').onclick = async () => {
             const nom = document.getElementById('orgSaveName').value.trim();
-            if (!nom) return alert('Ingresa nombre de tabla');
+            if (!nom) return alert('Ingresa un nombre para la tabla');
             clearSelection();
             const html = orgTC.innerHTML;
             const btn = document.getElementById('orgSaveBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            await addDoc(collection(db, "tablas_organizacion"), { nombre: nom, html, fechaCreacion: new Date().toISOString() });
-            alert('Tabla guardada');
-            document.getElementById('orgSaveName').value = '';
-            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar';
-            loadOrgTablesList();
-        };
+            const editingId = document.getElementById('orgEditingId').value;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
 
-        document.getElementById('orgLoadBtn').onclick = () => {
-            const s = document.getElementById('orgLoadSelect');
-            const opt = s.options[s.selectedIndex];
-            if (opt && opt.value) orgTC.innerHTML = opt.dataset.html;
-        };
-
-        document.getElementById('orgDeleteBtn').onclick = async () => {
-            const id = document.getElementById('orgLoadSelect').value;
-            if (!id) return;
-            if (confirm('¿Eliminar esta tabla en la nube?')) {
-                await deleteDoc(doc(db, "tablas_organizacion", id));
-                orgTC.innerHTML = '';
+            try {
+                if (editingId) {
+                    // Actualizar tabla existente
+                    await updateDoc(doc(db, "tablas_organizacion", editingId), {
+                        nombre: nom,
+                        html: html,
+                        fechaActualizacion: new Date().toISOString()
+                    });
+                    alert('Tabla actualizada correctamente');
+                } else {
+                    // Crear nueva
+                    const newDoc = await addDoc(collection(db, "tablas_organizacion"), {
+                        nombre: nom,
+                        html: html,
+                        fechaCreacion: new Date().toISOString()
+                    });
+                    document.getElementById('orgEditingId').value = newDoc.id;
+                    alert('Tabla guardada correctamente');
+                }
                 loadOrgTablesList();
+            } catch (e) {
+                console.error(e);
+                alert('Error al guardar la tabla');
             }
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar';
+            btn.disabled = false;
         };
 
+        // Imprimir tabla actual del editor
         document.getElementById('orgPrintBtn').onclick = () => {
             clearSelection();
+            const nombre = document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR';
             const html = `
-                <div style="font-family: sans-serif; background: white; width: 100%;">
-                    <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px; color: #0f766e;">ORGANIZACIÓN ESCOLAR</h1>
-                    <style>
-                        #printArea table { width: 100%; border-collapse: collapse; }
-                        #printArea td, #printArea th { border: 1px solid #000; padding: 10px; vertical-align: top; }
-                        #printArea td[style*="display: none"] { display: none !important; }
-                    </style>
+                <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm;">
+                    <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(nombre)}</h1>
                     ${orgTC.innerHTML}
                 </div>
             `;
-            window.imprimirEnNuevaVentana(html, 'Organización Escolar');
+            window.imprimirUnificado(html, nombre, false);
+        };
+
+        // Imprimir TODAS las tablas guardadas
+        document.getElementById('orgPrintAllBtn').onclick = async () => {
+            const btn = document.getElementById('orgPrintAllBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+            btn.disabled = true;
+
+            try {
+                const snap = await getDocs(query(collection(db, "tablas_organizacion")));
+                const tablas = [];
+                snap.forEach(d => tablas.push({ id: d.id, ...d.data() }));
+                tablas.sort((a, b) => (a.fechaCreacion || '').localeCompare(b.fechaCreacion || ''));
+
+                if (tablas.length === 0) {
+                    alert('No hay tablas guardadas para imprimir.');
+                    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Imprimir todas';
+                    btn.disabled = false;
+                    return;
+                }
+
+                let allHtml = '';
+                tablas.forEach((t, idx) => {
+                    const pageBreak = idx > 0 ? 'page-break-before: always;' : '';
+                    allHtml += `
+                        <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm; ${pageBreak}">
+                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(t.nombre || 'Sin nombre')}</h1>
+                            ${t.html}
+                        </div>
+                    `;
+                });
+
+                window.imprimirUnificado(allHtml, 'Todas las tablas - Organización Escolar', false);
+            } catch (e) {
+                console.error(e);
+                alert('Error al cargar las tablas para imprimir');
+            }
+            btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Imprimir todas';
+            btn.disabled = false;
         };
 
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
