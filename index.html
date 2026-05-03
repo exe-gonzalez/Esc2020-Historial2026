@@ -7,6 +7,7 @@
     <title>Historial Escolar 2026 - ESC 2020</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @page {
             margin: 0;
@@ -186,7 +187,10 @@
                         class="fa-solid fa-school"></i> Organización</button>
                 <button id="printBtn"
                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
-                        class="fa-solid fa-print"></i> Imprimir PDF</button>
+                        class="fa-solid fa-print"></i> Imprimir</button>
+                <button id="exportPdfBtn"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
+                        class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                 <button id="adminToggleBtn"
                     class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
                         class="fa-solid fa-lock"></i> Admin</button>
@@ -298,6 +302,9 @@
                                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1 font-bold"><i
                                     class="fa-solid fa-print"></i> Imprimir</button>
                         </div>
+                        <button id="caratulaExportPdfBtn"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold mt-2"><i
+                                class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                     </div>
 
                     <!-- Preview A4 -->
@@ -369,6 +376,9 @@
                         <button id="portadaPrintBtn"
                             class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-2 transition"><i
                                 class="fa-solid fa-print"></i> Imprimir a tamaño completo</button>
+                        <button id="portadaExportPdfBtn"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-2 transition"><i
+                                class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                     </div>
                 </div>
             </div>
@@ -459,13 +469,19 @@
                         class="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded font-semibold shadow-sm"><i
                             class="fa-solid fa-cloud-arrow-up"></i> Guardar</button>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap">
                     <button id="orgPrintBtn"
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow"><i
                             class="fa-solid fa-print"></i> Imprimir actual</button>
                     <button id="orgPrintAllBtn"
                         class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg font-bold shadow"><i
-                            class="fa-solid fa-file-pdf"></i> Imprimir todas</button>
+                            class="fa-solid fa-print"></i> Imprimir todas</button>
+                    <button id="orgExportPdfBtn"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold shadow"><i
+                            class="fa-solid fa-file-pdf"></i> PDF actual</button>
+                    <button id="orgExportAllPdfBtn"
+                        class="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg font-bold shadow"><i
+                            class="fa-solid fa-file-pdf"></i> PDF todas</button>
                 </div>
             </div>
 
@@ -566,79 +582,127 @@
                 }
             `;
 
-            ventana.document.write(`
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>${titulo}</title>
-                    <script src="https://cdn.tailwindcss.com"><\/script>
-                    <style>
-                        * { box-sizing: border-box; }
-                        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; font-family: sans-serif; }
-                        table { width: 100%; border-collapse: collapse; }
-                        td, th { border: 1px solid #333; padding: 8px; vertical-align: top; }
-                        td[style*="display: none"] { display: none !important; }
-                        ${estilosExtra}
-                    </style>
-                </head>
-                <body>
-                    <div id="printLoadingMsg" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;">
-                        <div style="border:3px solid #f3f3f3;border-top:3px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div>
-                        <p style="color:#2563eb;font-weight:bold;font-size:1.25rem;margin-top:1rem;">Preparando impresión...</p>
-                        <p style="color:#6b7280;font-size:0.875rem;margin-top:0.5rem;">Cargando contenido</p>
-                        <style>@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}</style>
-                    </div>
-                    <div id="printContent" style="display:none;">
-                        ${contenidoHTML}
-                    </div>
-                    <script>
-                        window.onload = function() {
-                            var imgs = Array.from(document.querySelectorAll('#printContent img'));
-                            var bgEls = Array.from(document.querySelectorAll('#printContent [style]')).filter(function(el) {
-                                return el.style.backgroundImage && el.style.backgroundImage !== 'none';
-                            });
-
-                            // Preload background images too
-                            var bgPromises = bgEls.map(function(el) {
-                                return new Promise(function(resolve) {
-                                    var url = el.style.backgroundImage.replace(/url\(["']?/, '').replace(/["']?\)/, '');
-                                    if (!url || url === 'none') { resolve(); return; }
-                                    var img = new Image();
-                                    img.onload = resolve;
-                                    img.onerror = resolve;
-                                    img.src = url;
-                                });
-                            });
-
-                            var imgPromises = imgs.map(function(img) {
-                                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-                                return new Promise(function(resolve) {
-                                    img.onload = resolve;
-                                    img.onerror = resolve;
-                                });
-                            });
-
-                            Promise.all(imgPromises.concat(bgPromises)).then(function() {
-                                setTimeout(function() {
-                                    document.getElementById('printLoadingMsg').style.display = 'none';
-                                    document.getElementById('printContent').style.display = 'block';
-                                    setTimeout(function() {
-                                        window.print();
-                                    }, 400);
-                                }, 300);
-                            });
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
+            ventana.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${titulo}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; font-family: sans-serif; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { border: 1px solid #333; padding: 8px; vertical-align: top; }
+        td[style*="display: none"] { display: none !important; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        ${estilosExtra}
+    </style>
+</head>
+<body>
+    <div id="printLoadingMsg" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;">
+        <div style="border:3px solid #f3f3f3;border-top:3px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;"></div>
+        <p style="color:#2563eb;font-weight:bold;font-size:1.25rem;margin-top:1rem;">Preparando impresión...</p>
+        <p style="color:#6b7280;font-size:0.875rem;margin-top:0.5rem;">Cargando contenido</p>
+    </div>
+    <div id="printContent" style="display:none;">
+        ${contenidoHTML}
+    </div>
+</body>
+</html>`);
             ventana.document.close();
+
+            // Esperar a que las imágenes carguen, luego imprimir
+            // Usamos setTimeout para no depender de window.onload (que se bloquea con scripts externos)
+            setTimeout(() => {
+                try {
+                    const doc = ventana.document;
+                    const imgs = Array.from(doc.querySelectorAll('#printContent img'));
+                    const bgEls = Array.from(doc.querySelectorAll('#printContent [style]')).filter(el => {
+                        return el.style && el.style.backgroundImage && el.style.backgroundImage !== 'none' && el.style.backgroundImage !== '';
+                    });
+
+                    const bgPromises = bgEls.map(el => {
+                        return new Promise(resolve => {
+                            const url = el.style.backgroundImage.replace(/url\(["']?/, '').replace(/["']?\)/, '');
+                            if (!url || url === 'none') { resolve(); return; }
+                            const img = new Image();
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                            img.src = url;
+                        });
+                    });
+
+                    const imgPromises = imgs.map(img => {
+                        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                        return new Promise(resolve => {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        });
+                    });
+
+                    // Safety timeout: si después de 8s no cargó, imprimir igual
+                    const safetyTimeout = new Promise(resolve => setTimeout(resolve, 8000));
+
+                    Promise.race([
+                        Promise.all(imgPromises.concat(bgPromises)),
+                        safetyTimeout
+                    ]).then(() => {
+                        try {
+                            doc.getElementById('printLoadingMsg').style.display = 'none';
+                            doc.getElementById('printContent').style.display = 'block';
+                            setTimeout(() => {
+                                ventana.focus();
+                                ventana.print();
+                            }, 500);
+                        } catch(e) { console.error('Error al imprimir:', e); }
+                    });
+                } catch(e) {
+                    console.error('Error preparando impresión:', e);
+                }
+            }, 200);
         };
 
         // Legacy alias
         window.imprimirEnNuevaVentana = (contenidoHTML, titulo) => window.imprimirUnificado(contenidoHTML, titulo, false);
+
+        // Función para exportar PDF automáticamente usando html2pdf.js
+        window.exportarPDF = (contenidoHTML, nombreArchivo = 'documento.pdf', fullPage = false) => {
+            // Crear contenedor temporal en el DOM
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = fullPage ? '210mm' : '190mm';
+            container.style.fontFamily = 'sans-serif';
+            container.style.background = 'white';
+            container.style.webkitPrintColorAdjust = 'exact';
+            container.style.printColorAdjust = 'exact';
+            container.innerHTML = contenidoHTML;
+            document.body.appendChild(container);
+
+            const opt = fullPage ? {
+                margin: 0,
+                filename: nombreArchivo,
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: null },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            } : {
+                margin: [10, 10, 10, 10],
+                filename: nombreArchivo,
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(container).save().then(() => {
+                document.body.removeChild(container);
+            }).catch(err => {
+                console.error('Error generando PDF:', err);
+                document.body.removeChild(container);
+                alert('Error al generar el PDF.');
+            });
+        };
 
         // ========== LOGIN ==========
         document.getElementById('loginBtn').onclick = () => {
@@ -919,13 +983,12 @@
             }
         };
 
-        // ========== IMPRESIÓN EVENTOS ==========
-        document.getElementById('printBtn').onclick = async () => {
+        // ========== IMPRESIÓN / EXPORTACIÓN EVENTOS ==========
+        async function generarHtmlEventos() {
             if (!currentMonth) {
-                alert('Primero selecciona un mes para imprimir sus eventos.');
-                return;
+                alert('Primero selecciona un mes.');
+                return null;
             }
-
             const q = query(collection(db, "eventos"), where("month", "==", currentMonth));
             const snap = await getDocs(q);
             const events = [];
@@ -934,12 +997,12 @@
 
             const mesName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
-            let printHtml = `
+            let html = `
             <div style="max-width: 900px; margin: 0 auto; padding: 1cm; font-family: sans-serif;">
                 <h1 style="text-align: center; color: #1e40af; font-size: 1.8rem; font-weight: bold; border-bottom: 2px solid #d1d5db; padding-bottom: 12px; margin-bottom: 24px;">Historial Escolar 2026 - ${mesName}</h1>`;
 
             if (events.length === 0) {
-                printHtml += `<p style="text-align: center; margin-top: 24px; color: #6b7280; font-size: 1.125rem;">No hay eventos en este mes.</p>`;
+                html += `<p style="text-align: center; margin-top: 24px; color: #6b7280; font-size: 1.125rem;">No hay eventos en este mes.</p>`;
             }
 
             for (const ev of events) {
@@ -947,24 +1010,33 @@
                 d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
                 const fecha = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
-                printHtml += `
+                html += `
                 <div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; padding-bottom: 24px; break-inside: avoid;">
                     <h4 style="font-weight: bold; font-size: 1.3rem; color: #1f2937;">${escapeHtml(ev.title)}</h4>
                     <p style="font-size: 0.875rem; color: #2563eb; font-weight: 600; margin-top: 4px; margin-bottom: 12px;">📅 ${fecha} | ${ev.turno}</p>
                     <p style="color: #1f2937; font-size: 1rem; margin-top: 8px; margin-bottom: 16px; white-space: pre-wrap;">${escapeHtml(ev.description || '')}</p>`;
 
                 if (ev.images && ev.images.length) {
-                    printHtml += `<div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; justify-content: center;">`;
+                    html += `<div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; justify-content: center;">`;
                     ev.images.forEach(img => {
-                        printHtml += `<img src="${img}" style="max-height: 200px; width: auto; border-radius: 8px; border: 1px solid #d1d5db;">`;
+                        html += `<img src="${img}" style="max-height: 200px; width: auto; border-radius: 8px; border: 1px solid #d1d5db;">`;
                     });
-                    printHtml += `</div>`;
+                    html += `</div>`;
                 }
-                printHtml += `</div>`;
+                html += `</div>`;
             }
-            printHtml += `</div>`;
+            html += `</div>`;
+            return { html, mesName };
+        }
 
-            window.imprimirUnificado(printHtml, `Historial ${mesName}`, false);
+        document.getElementById('printBtn').onclick = async () => {
+            const result = await generarHtmlEventos();
+            if (result) window.imprimirUnificado(result.html, `Historial ${result.mesName}`, false);
+        };
+
+        document.getElementById('exportPdfBtn').onclick = async () => {
+            const result = await generarHtmlEventos();
+            if (result) window.exportarPDF(result.html, `Historial_${result.mesName}.pdf`, false);
         };
 
         // ========== CARÁTULAS ==========
@@ -977,10 +1049,12 @@
             if (e.target.files[0]) {
                 const b64 = await compressImage(e.target.files[0], 1000, 0.6);
                 document.getElementById('caratulaPreviewBg').style.backgroundImage = `url("${b64}")`;
+                document.getElementById('caratulaPreviewBg').dataset.rawb64 = b64;
             }
         });
         document.getElementById('caratulaClearBgBtn').onclick = () => {
             document.getElementById('caratulaPreviewBg').style.backgroundImage = '';
+            document.getElementById('caratulaPreviewBg').dataset.rawb64 = '';
             document.getElementById('caratulaBgInput').value = '';
         };
 
@@ -998,8 +1072,15 @@
             const nom = document.getElementById('caratulaNombre').value.trim();
             const col = document.getElementById('caratulaColor').value;
             const size = document.getElementById('caratulaSize').value;
-            const bgStr = document.getElementById('caratulaPreviewBg').style.backgroundImage;
-            const bg = bgStr && bgStr !== 'none' ? bgStr.slice(5, -2) : null;
+            // Get raw base64 if available, otherwise fallback to style parsing (for safety)
+            let bg = document.getElementById('caratulaPreviewBg').dataset.rawb64 || '';
+            if (!bg) {
+                const bgStyle = document.getElementById('caratulaPreviewBg').style.backgroundImage;
+                if (bgStyle && bgStyle !== 'none') {
+                    bg = bgStyle.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+                }
+            }
+            
             if (!nom && !bg) return alert('Agrega texto o imagen');
 
             const btn = document.getElementById('caratulaSaveBtn');
@@ -1021,14 +1102,23 @@
             let h = '';
             snap.forEach(d => {
                 const dt = d.data();
-                const bg = dt.imagenFondo ? `background-image: url('${dt.imagenFondo}');` : '';
+                let bgUrl = dt.imagenFondo || '';
+                // Handle backward compatibility for legacy saved base64 strings without url()
+                if (bgUrl && !bgUrl.startsWith('url') && bgUrl !== 'none') {
+                    bgUrl = `url('${bgUrl}')`;
+                }
+                // Replace double quotes with single quotes to not break the style HTML attribute
+                bgUrl = bgUrl.replace(/"/g, "'");
+                const bgStyle = bgUrl && bgUrl !== 'none' ? `background-image: ${bgUrl};` : '';
+                
                 h += `<div class="border rounded-xl p-3 bg-gray-50 flex flex-col items-center shadow-sm">
-                    <div class="w-full aspect-[1/1.414] bg-cover bg-center relative border mb-3 print-bg-adjust" style="${bg}">
+                    <div class="w-full aspect-[1/1.414] bg-cover bg-center relative border mb-3 print-bg-adjust" style="${bgStyle}">
                         <div class="absolute inset-0 flex items-center justify-center font-bold text-center p-2 break-words uppercase" style="color: ${dt.colorTexto || 'black'}; font-size: ${dt.fontSize ? 'calc(' + dt.fontSize + ' * 0.4)' : '1rem'}">${escapeHtml(dt.nombreTexto || '')}</div>
                     </div>
-                    <div class="flex gap-2 w-full">
-                        <button class="bg-green-600 hover:bg-green-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" onclick="printCaratulaSaved('${d.id}')"><i class="fa-solid fa-print"></i></button>
-                        ${isAdmin ? `<button class="bg-red-600 hover:bg-red-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition admin-only" onclick="deleteCaratula('${d.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    <div class="flex gap-1 w-full">
+                        <button class="bg-green-600 hover:bg-green-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" title="Imprimir" onclick="printCaratulaSaved('${d.id}')"><i class="fa-solid fa-print"></i></button>
+                        <button class="bg-red-600 hover:bg-red-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" title="Exportar PDF" onclick="exportCaratulaSaved('${d.id}')"><i class="fa-solid fa-file-pdf"></i></button>
+                        ${isAdmin ? `<button class="bg-red-800 hover:bg-red-900 text-white flex-1 py-1.5 rounded text-sm font-semibold transition admin-only" title="Eliminar" onclick="deleteCaratula('${d.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </div>`;
             });
@@ -1043,28 +1133,49 @@
             }
         };
 
-        function doPrintA4(bgUrl, text, color, size) {
-            const html = `
-                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${bgUrl || 'none'};">
+        function getCaratulaHtml(bgUrl, text, color, size) {
+            // Replace double quotes with single quotes to prevent breaking the style="" attribute
+            const safeBgUrl = (bgUrl || 'none').replace(/"/g, "'");
+            return `
+                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${safeBgUrl};">
                     <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${size}; padding: 2cm; word-break: break-word; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                         ${escapeHtml(text || '')}
                     </div>
                 </div>
             `;
-            window.imprimirUnificado(html, 'Carátula', true);
         }
 
         document.getElementById('caratulaPrintCurrentBtn').onclick = () => {
             const bg = document.getElementById('caratulaPreviewBg').style.backgroundImage;
-            doPrintA4(bg, document.getElementById('caratulaNombre').value, document.getElementById('caratulaColor').value, document.getElementById('caratulaSize').value);
+            const html = getCaratulaHtml(bg, document.getElementById('caratulaNombre').value, document.getElementById('caratulaColor').value, document.getElementById('caratulaSize').value);
+            window.imprimirUnificado(html, 'Carátula', true);
+        };
+
+        document.getElementById('caratulaExportPdfBtn').onclick = () => {
+            const bg = document.getElementById('caratulaPreviewBg').style.backgroundImage;
+            const html = getCaratulaHtml(bg, document.getElementById('caratulaNombre').value, document.getElementById('caratulaColor').value, document.getElementById('caratulaSize').value);
+            window.exportarPDF(html, 'Caratula.pdf', true);
         };
 
         window.printCaratulaSaved = async (id) => {
-            const snap = await getDocs(query(collection(db, "caratulas"), where("__name__", "==", id)));
-            if (!snap.empty) {
-                const d = snap.docs[0].data();
-                const bg = d.imagenFondo ? `url("${d.imagenFondo}")` : '';
-                doPrintA4(bg, d.nombreTexto, d.colorTexto, d.fontSize);
+            const docSnap = await getDoc(doc(db, "caratulas", id));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                let bgUrl = d.imagenFondo || '';
+                if (bgUrl && !bgUrl.startsWith('url') && bgUrl !== 'none') bgUrl = `url("${bgUrl}")`;
+                const html = getCaratulaHtml(bgUrl, d.nombreTexto, d.colorTexto, d.fontSize);
+                window.imprimirUnificado(html, 'Carátula', true);
+            }
+        };
+
+        window.exportCaratulaSaved = async (id) => {
+            const docSnap = await getDoc(doc(db, "caratulas", id));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                let bgUrl = d.imagenFondo || '';
+                if (bgUrl && !bgUrl.startsWith('url') && bgUrl !== 'none') bgUrl = `url("${bgUrl}")`;
+                const html = getCaratulaHtml(bgUrl, d.nombreTexto, d.colorTexto, d.fontSize);
+                window.exportarPDF(html, `Caratula_${d.nombreTexto || id}.pdf`, true);
             }
         };
 
@@ -1139,14 +1250,15 @@
 
         document.getElementById('portadaPrintBtn').onclick = () => {
             const preview = document.getElementById('portadaPreview');
-            const bgImage = document.getElementById('portadaPreviewBg').style.backgroundImage;
+            let bgImage = document.getElementById('portadaPreviewBg').style.backgroundImage || 'none';
+            bgImage = bgImage.replace(/"/g, "'");
             const textEl = document.getElementById('portadaPreviewText');
             const text = textEl.textContent;
             const color = textEl.style.color || 'white';
             const fontSize = textEl.style.fontSize || '3rem';
 
             const html = `
-                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${bgImage || 'none'};">
+                <div class="fullpage-print" style="width: 100%; height: 100vh; position: relative; background-size: cover; background-position: center; background-repeat: no-repeat; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; background-image: ${bgImage};">
                     <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: bold; font-family: sans-serif; color: ${color}; font-size: ${fontSize}; padding: 2cm; word-break: break-word; text-transform: uppercase; text-shadow: 0 4px 4px rgba(0,0,0,0.8);">
                         ${escapeHtml(text || '')}
                     </div>
@@ -1349,21 +1461,24 @@
                             <p class="font-bold text-teal-800 truncate text-lg">${escapeHtml(t.nombre)}</p>
                             <p class="text-xs text-gray-500"><i class="fa-regular fa-calendar"></i> ${fecha}</p>
                         </div>
-                        <div class="flex gap-2 flex-shrink-0">
+                        <div class="flex gap-1 flex-shrink-0">
                             <button class="org-load-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Cargar en editor"><i class="fa-solid fa-pen-to-square"></i> Cargar</button>
                             <button class="org-print-one-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Imprimir esta tabla"><i class="fa-solid fa-print"></i></button>
-                            ${isAdmin ? `<button class="org-del-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            <button class="org-export-one-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Exportar PDF"><i class="fa-solid fa-file-pdf"></i></button>
+                            ${isAdmin ? `<button class="org-del-btn bg-red-800 hover:bg-red-900 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </div>
                     </div>`;
                 });
                 listEl.innerHTML = h;
 
-                // Event listeners para botones de tarjetas
                 listEl.querySelectorAll('.org-load-btn').forEach(btn => {
                     btn.onclick = () => loadOrgTable(btn.dataset.id);
                 });
                 listEl.querySelectorAll('.org-print-one-btn').forEach(btn => {
-                    btn.onclick = () => printOrgTableById(btn.dataset.id);
+                    btn.onclick = () => handleOrgTableAction(btn.dataset.id, 'print');
+                });
+                listEl.querySelectorAll('.org-export-one-btn').forEach(btn => {
+                    btn.onclick = () => handleOrgTableAction(btn.dataset.id, 'export');
                 });
                 listEl.querySelectorAll('.org-del-btn').forEach(btn => {
                     btn.onclick = () => deleteOrgTable(btn.dataset.id);
@@ -1374,7 +1489,6 @@
             }
         }
 
-        // Cargar tabla en el editor
         async function loadOrgTable(id) {
             try {
                 const docSnap = await getDoc(doc(db, "tablas_organizacion", id));
@@ -1383,7 +1497,6 @@
                     orgTC.innerHTML = data.html;
                     document.getElementById('orgSaveName').value = data.nombre || '';
                     document.getElementById('orgEditingId').value = id;
-                    // Scroll al editor
                     orgTC.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             } catch (e) {
@@ -1392,32 +1505,34 @@
             }
         }
 
-        // Imprimir una tabla guardada
-        async function printOrgTableById(id) {
+        async function handleOrgTableAction(id, action) {
             try {
                 const docSnap = await getDoc(doc(db, "tablas_organizacion", id));
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    const nombre = escapeHtml(data.nombre || 'ORGANIZACIÓN ESCOLAR');
                     const html = `
                         <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm;">
-                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(data.nombre || 'ORGANIZACIÓN ESCOLAR')}</h1>
+                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${nombre}</h1>
                             ${data.html}
                         </div>
                     `;
-                    window.imprimirUnificado(html, data.nombre || 'Tabla', false);
+                    if (action === 'print') {
+                        window.imprimirUnificado(html, data.nombre || 'Tabla', false);
+                    } else {
+                        window.exportarPDF(html, `Tabla_${nombre.replace(/ /g, '_')}.pdf`, false);
+                    }
                 }
             } catch (e) {
                 console.error(e);
-                alert('Error al imprimir la tabla');
+                alert('Error al procesar la tabla');
             }
         }
 
-        // Eliminar tabla (solo admin)
         async function deleteOrgTable(id) {
             if (!isAdmin) { alert('Solo el administrador puede eliminar tablas.'); return; }
             if (confirm('¿Eliminar esta tabla permanentemente?')) {
                 await deleteDoc(doc(db, "tablas_organizacion", id));
-                // Si estábamos editando esta tabla, limpiar editor
                 if (document.getElementById('orgEditingId').value === id) {
                     document.getElementById('orgEditingId').value = '';
                     document.getElementById('orgSaveName').value = '';
@@ -1426,7 +1541,6 @@
             }
         }
 
-        // Guardar tabla (nueva o actualizar existente)
         document.getElementById('orgSaveBtn').onclick = async () => {
             const nom = document.getElementById('orgSaveName').value.trim();
             if (!nom) return alert('Ingresa un nombre para la tabla');
@@ -1439,7 +1553,6 @@
 
             try {
                 if (editingId) {
-                    // Actualizar tabla existente
                     await updateDoc(doc(db, "tablas_organizacion", editingId), {
                         nombre: nom,
                         html: html,
@@ -1447,7 +1560,6 @@
                     });
                     alert('Tabla actualizada correctamente');
                 } else {
-                    // Crear nueva
                     const newDoc = await addDoc(collection(db, "tablas_organizacion"), {
                         nombre: nom,
                         html: html,
@@ -1465,25 +1577,30 @@
             btn.disabled = false;
         };
 
-        // Imprimir tabla actual del editor
-        document.getElementById('orgPrintBtn').onclick = () => {
+        function getHtmlActual() {
             clearSelection();
-            const nombre = document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR';
-            const html = `
+            const nombre = escapeHtml(document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR');
+            return `
                 <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm;">
-                    <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(nombre)}</h1>
+                    <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${nombre}</h1>
                     ${orgTC.innerHTML}
                 </div>
             `;
+        }
+
+        document.getElementById('orgPrintBtn').onclick = () => {
+            const html = getHtmlActual();
+            const nombre = document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR';
             window.imprimirUnificado(html, nombre, false);
         };
 
-        // Imprimir TODAS las tablas guardadas
-        document.getElementById('orgPrintAllBtn').onclick = async () => {
-            const btn = document.getElementById('orgPrintAllBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
-            btn.disabled = true;
+        document.getElementById('orgExportPdfBtn').onclick = () => {
+            const html = getHtmlActual();
+            const nombre = document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR';
+            window.exportarPDF(html, `Tabla_${nombre.replace(/ /g, '_')}.pdf`, false);
+        };
 
+        async function getHtmlTodasLasTablas() {
             try {
                 const snap = await getDocs(query(collection(db, "tablas_organizacion")));
                 const tablas = [];
@@ -1491,10 +1608,8 @@
                 tablas.sort((a, b) => (a.fechaCreacion || '').localeCompare(b.fechaCreacion || ''));
 
                 if (tablas.length === 0) {
-                    alert('No hay tablas guardadas para imprimir.');
-                    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Imprimir todas';
-                    btn.disabled = false;
-                    return;
+                    alert('No hay tablas guardadas.');
+                    return null;
                 }
 
                 let allHtml = '';
@@ -1507,13 +1622,37 @@
                         </div>
                     `;
                 });
-
-                window.imprimirUnificado(allHtml, 'Todas las tablas - Organización Escolar', false);
+                return allHtml;
             } catch (e) {
                 console.error(e);
-                alert('Error al cargar las tablas para imprimir');
+                alert('Error al cargar las tablas');
+                return null;
             }
-            btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Imprimir todas';
+        }
+
+        document.getElementById('orgPrintAllBtn').onclick = async () => {
+            const btn = document.getElementById('orgPrintAllBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+            btn.disabled = true;
+            
+            const html = await getHtmlTodasLasTablas();
+            if (html) window.imprimirUnificado(html, 'Todas las tablas - Organización Escolar', false);
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        };
+
+        document.getElementById('orgExportAllPdfBtn').onclick = async () => {
+            const btn = document.getElementById('orgExportAllPdfBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+            btn.disabled = true;
+            
+            const html = await getHtmlTodasLasTablas();
+            if (html) window.exportarPDF(html, 'Todas_las_tablas_Organizacion_Escolar.pdf', false);
+            
+            btn.innerHTML = originalText;
             btn.disabled = false;
         };
 
