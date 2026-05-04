@@ -7,7 +7,6 @@
     <title>Historial Escolar 2026 - ESC 2020</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @page {
             margin: 0;
@@ -188,9 +187,6 @@
                 <button id="printBtn"
                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
                         class="fa-solid fa-print"></i> Imprimir</button>
-                <button id="exportPdfBtn"
-                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
-                        class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                 <button id="adminToggleBtn"
                     class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-semibold transition"><i
                         class="fa-solid fa-lock"></i> Admin</button>
@@ -302,9 +298,6 @@
                                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1 font-bold"><i
                                     class="fa-solid fa-print"></i> Imprimir</button>
                         </div>
-                        <button id="caratulaExportPdfBtn"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold mt-2"><i
-                                class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                     </div>
 
                     <!-- Preview A4 -->
@@ -376,9 +369,6 @@
                         <button id="portadaPrintBtn"
                             class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-2 transition"><i
                                 class="fa-solid fa-print"></i> Imprimir a tamaño completo</button>
-                        <button id="portadaExportPdfBtn"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg shadow-md text-lg font-bold mt-2 transition"><i
-                                class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
                     </div>
                 </div>
             </div>
@@ -476,12 +466,6 @@
                     <button id="orgPrintAllBtn"
                         class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg font-bold shadow"><i
                             class="fa-solid fa-print"></i> Imprimir todas</button>
-                    <button id="orgExportPdfBtn"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold shadow"><i
-                            class="fa-solid fa-file-pdf"></i> PDF actual</button>
-                    <button id="orgExportAllPdfBtn"
-                        class="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg font-bold shadow"><i
-                            class="fa-solid fa-file-pdf"></i> PDF todas</button>
                 </div>
             </div>
 
@@ -664,45 +648,6 @@
 
         // Legacy alias
         window.imprimirEnNuevaVentana = (contenidoHTML, titulo) => window.imprimirUnificado(contenidoHTML, titulo, false);
-
-        // Función para exportar PDF automáticamente usando html2pdf.js
-        window.exportarPDF = (contenidoHTML, nombreArchivo = 'documento.pdf', fullPage = false) => {
-            // Crear contenedor temporal en el DOM
-            const container = document.createElement('div');
-            container.style.position = 'fixed';
-            container.style.left = '-9999px';
-            container.style.top = '0';
-            container.style.width = fullPage ? '210mm' : '190mm';
-            container.style.fontFamily = 'sans-serif';
-            container.style.background = 'white';
-            container.style.webkitPrintColorAdjust = 'exact';
-            container.style.printColorAdjust = 'exact';
-            container.innerHTML = contenidoHTML;
-            document.body.appendChild(container);
-
-            const opt = fullPage ? {
-                margin: 0,
-                filename: nombreArchivo,
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: null },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            } : {
-                margin: [10, 10, 10, 10],
-                filename: nombreArchivo,
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(container).save().then(() => {
-                document.body.removeChild(container);
-            }).catch(err => {
-                console.error('Error generando PDF:', err);
-                document.body.removeChild(container);
-                alert('Error al generar el PDF.');
-            });
-        };
 
         // ========== LOGIN ==========
         document.getElementById('loginBtn').onclick = () => {
@@ -1034,11 +979,6 @@
             if (result) window.imprimirUnificado(result.html, `Historial ${result.mesName}`, false);
         };
 
-        document.getElementById('exportPdfBtn').onclick = async () => {
-            const result = await generarHtmlEventos();
-            if (result) window.exportarPDF(result.html, `Historial_${result.mesName}.pdf`, false);
-        };
-
         // ========== CARÁTULAS ==========
         document.getElementById('caratulasBtn').onclick = () => {
             openModal('modalCaratulas');
@@ -1117,7 +1057,6 @@
                     </div>
                     <div class="flex gap-1 w-full">
                         <button class="bg-green-600 hover:bg-green-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" title="Imprimir" onclick="printCaratulaSaved('${d.id}')"><i class="fa-solid fa-print"></i></button>
-                        <button class="bg-red-600 hover:bg-red-700 text-white flex-1 py-1.5 rounded text-sm font-semibold transition" title="Exportar PDF" onclick="exportCaratulaSaved('${d.id}')"><i class="fa-solid fa-file-pdf"></i></button>
                         ${isAdmin ? `<button class="bg-red-800 hover:bg-red-900 text-white flex-1 py-1.5 rounded text-sm font-semibold transition admin-only" title="Eliminar" onclick="deleteCaratula('${d.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </div>`;
@@ -1151,12 +1090,6 @@
             window.imprimirUnificado(html, 'Carátula', true);
         };
 
-        document.getElementById('caratulaExportPdfBtn').onclick = () => {
-            const bg = document.getElementById('caratulaPreviewBg').style.backgroundImage;
-            const html = getCaratulaHtml(bg, document.getElementById('caratulaNombre').value, document.getElementById('caratulaColor').value, document.getElementById('caratulaSize').value);
-            window.exportarPDF(html, 'Caratula.pdf', true);
-        };
-
         window.printCaratulaSaved = async (id) => {
             const docSnap = await getDoc(doc(db, "caratulas", id));
             if (docSnap.exists()) {
@@ -1165,17 +1098,6 @@
                 if (bgUrl && !bgUrl.startsWith('url') && bgUrl !== 'none') bgUrl = `url("${bgUrl}")`;
                 const html = getCaratulaHtml(bgUrl, d.nombreTexto, d.colorTexto, d.fontSize);
                 window.imprimirUnificado(html, 'Carátula', true);
-            }
-        };
-
-        window.exportCaratulaSaved = async (id) => {
-            const docSnap = await getDoc(doc(db, "caratulas", id));
-            if (docSnap.exists()) {
-                const d = docSnap.data();
-                let bgUrl = d.imagenFondo || '';
-                if (bgUrl && !bgUrl.startsWith('url') && bgUrl !== 'none') bgUrl = `url("${bgUrl}")`;
-                const html = getCaratulaHtml(bgUrl, d.nombreTexto, d.colorTexto, d.fontSize);
-                window.exportarPDF(html, `Caratula_${d.nombreTexto || id}.pdf`, true);
             }
         };
 
@@ -1464,7 +1386,6 @@
                         <div class="flex gap-1 flex-shrink-0">
                             <button class="org-load-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Cargar en editor"><i class="fa-solid fa-pen-to-square"></i> Cargar</button>
                             <button class="org-print-one-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Imprimir esta tabla"><i class="fa-solid fa-print"></i></button>
-                            <button class="org-export-one-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Exportar PDF"><i class="fa-solid fa-file-pdf"></i></button>
                             ${isAdmin ? `<button class="org-del-btn bg-red-800 hover:bg-red-900 text-white px-3 py-1.5 rounded text-sm font-semibold" data-id="${t.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </div>
                     </div>`;
@@ -1476,9 +1397,6 @@
                 });
                 listEl.querySelectorAll('.org-print-one-btn').forEach(btn => {
                     btn.onclick = () => handleOrgTableAction(btn.dataset.id, 'print');
-                });
-                listEl.querySelectorAll('.org-export-one-btn').forEach(btn => {
-                    btn.onclick = () => handleOrgTableAction(btn.dataset.id, 'export');
                 });
                 listEl.querySelectorAll('.org-del-btn').forEach(btn => {
                     btn.onclick = () => deleteOrgTable(btn.dataset.id);
@@ -1519,8 +1437,6 @@
                     `;
                     if (action === 'print') {
                         window.imprimirUnificado(html, data.nombre || 'Tabla', false);
-                    } else {
-                        window.exportarPDF(html, `Tabla_${nombre.replace(/ /g, '_')}.pdf`, false);
                     }
                 }
             } catch (e) {
@@ -1594,12 +1510,6 @@
             window.imprimirUnificado(html, nombre, false);
         };
 
-        document.getElementById('orgExportPdfBtn').onclick = () => {
-            const html = getHtmlActual();
-            const nombre = document.getElementById('orgSaveName').value.trim() || 'ORGANIZACIÓN ESCOLAR';
-            window.exportarPDF(html, `Tabla_${nombre.replace(/ /g, '_')}.pdf`, false);
-        };
-
         async function getHtmlTodasLasTablas() {
             try {
                 const snap = await getDocs(query(collection(db, "tablas_organizacion")));
@@ -1638,19 +1548,6 @@
             
             const html = await getHtmlTodasLasTablas();
             if (html) window.imprimirUnificado(html, 'Todas las tablas - Organización Escolar', false);
-            
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        };
-
-        document.getElementById('orgExportAllPdfBtn').onclick = async () => {
-            const btn = document.getElementById('orgExportAllPdfBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
-            btn.disabled = true;
-            
-            const html = await getHtmlTodasLasTablas();
-            if (html) window.exportarPDF(html, 'Todas_las_tablas_Organizacion_Escolar.pdf', false);
             
             btn.innerHTML = originalText;
             btn.disabled = false;
