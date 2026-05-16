@@ -1379,6 +1379,10 @@
                     const fecha = t.fechaCreacion ? new Date(t.fechaCreacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
                     h += `
                     <div class="saved-table-card" data-tablaid="${t.id}">
+                        <div class="flex flex-col gap-1 mr-2">
+                            <button class="org-move-up-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-0.5 rounded text-xs" title="Subir"><i class="fa-solid fa-chevron-up"></i></button>
+                            <button class="org-move-down-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-0.5 rounded text-xs" title="Bajar"><i class="fa-solid fa-chevron-down"></i></button>
+                        </div>
                         <div class="flex-1 min-w-0">
                             <p class="font-bold text-teal-800 truncate text-lg">${escapeHtml(t.nombre)}</p>
                             <p class="text-xs text-gray-500"><i class="fa-regular fa-calendar"></i> ${fecha}</p>
@@ -1391,6 +1395,19 @@
                     </div>`;
                 });
                 listEl.innerHTML = h;
+
+                listEl.querySelectorAll('.org-move-up-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const card = btn.closest('.saved-table-card');
+                        if (card.previousElementSibling) card.parentNode.insertBefore(card, card.previousElementSibling);
+                    };
+                });
+                listEl.querySelectorAll('.org-move-down-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const card = btn.closest('.saved-table-card');
+                        if (card.nextElementSibling) card.parentNode.insertBefore(card.nextElementSibling, card);
+                    };
+                });
 
                 listEl.querySelectorAll('.org-load-btn').forEach(btn => {
                     btn.onclick = () => loadOrgTable(btn.dataset.id);
@@ -1513,20 +1530,31 @@
         async function getHtmlTodasLasTablas() {
             try {
                 const snap = await getDocs(query(collection(db, "tablas_organizacion")));
-                const tablas = [];
-                snap.forEach(d => tablas.push({ id: d.id, ...d.data() }));
-                tablas.sort((a, b) => (a.fechaCreacion || '').localeCompare(b.fechaCreacion || ''));
+                const tablasMap = {};
+                snap.forEach(d => tablasMap[d.id] = { id: d.id, ...d.data() });
 
-                if (tablas.length === 0) {
+                // Obtener el orden actual del DOM
+                const domOrder = Array.from(document.querySelectorAll('.saved-table-card')).map(el => el.dataset.tablaid);
+                
+                let tablasOrdenadas = [];
+                if (domOrder.length > 0) {
+                    domOrder.forEach(id => {
+                        if (tablasMap[id]) tablasOrdenadas.push(tablasMap[id]);
+                    });
+                } else {
+                    // Si no hay DOM (raro), ordenar por fecha de creacion descendente
+                    tablasOrdenadas = Object.values(tablasMap).sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
+                }
+
+                if (tablasOrdenadas.length === 0) {
                     alert('No hay tablas guardadas.');
                     return null;
                 }
 
                 let allHtml = '';
-                tablas.forEach((t, idx) => {
-                    const pageBreak = idx > 0 ? 'page-break-before: always;' : '';
+                tablasOrdenadas.forEach((t) => {
                     allHtml += `
-                        <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm; ${pageBreak}">
+                        <div style="font-family: sans-serif; background: white; width: 100%; padding: 1cm; margin-bottom: 20px;">
                             <h1 style="text-align: center; margin-bottom: 20px; font-size: 22px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">${escapeHtml(t.nombre || 'Sin nombre')}</h1>
                             ${t.html}
                         </div>
